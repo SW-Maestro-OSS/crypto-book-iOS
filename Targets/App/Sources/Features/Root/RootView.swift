@@ -17,9 +17,11 @@ struct RootView: View {
         WithPerceptionTracking {
             switch store.route {
             case .splash:
-                SplashView(
-                    store: store.scope(state: \.splash, action: \.splash)
-                )
+                SplashView()  
+                    .onAppear {
+                        store.send(.onAppear)
+                    }
+
             case .main:
                 MainView(
                     store: store.scope(state: \.main, action: \.main)

@@ -14,7 +14,6 @@ struct RootFeature {
     @ObservableState
     struct State: Equatable {
         var route: Route = .splash
-        var splash = SplashFeature.State()
         var main = MainFeature.State()
     }
 
@@ -24,25 +23,31 @@ struct RootFeature {
     }
 
     enum Action {
-        case splash(SplashFeature.Action)
+        case onAppear
+        case splashTimerFinished
         case main(MainFeature.Action)
     }
-
+    
+    @Dependency(\.continuousClock) var clock
+    
     var body: some Reducer<State, Action> {
-        Scope(state: \.splash, action: \.splash) {
-            SplashFeature()
-        }
         Scope(state: \.main, action: \.main) {
             MainFeature()
         }
-
+        
         Reduce { state, action in
             switch action {
-            case .splash(.delegate(.didFinishLoading)):
+            case .onAppear:
+                return .run { send in
+                    try await clock.sleep(for: .seconds(2))
+                    await send(.splashTimerFinished)
+                }
+                
+            case .splashTimerFinished:
                 state.route = .main
                 return .none
-
-            case .splash, .main:
+                
+            case .main:
                 return .none
             }
         }
