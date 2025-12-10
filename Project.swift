@@ -8,6 +8,9 @@ let organizationName = "io.tuist"
 let project = Project(
     name: projectName,
     organizationName: organizationName,
+    packages: [
+        .remote(url: "https://github.com/pointfreeco/swift-composable-architecture.git", requirement: .upToNextMajor(from: "1.23.1"))
+    ],
     targets: [
         // App
         .target(
