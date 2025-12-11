@@ -9,10 +9,14 @@
 import Foundation
 import Domain
 
-public final class InitialDataRepositoryImpl: InitialDataRepository {
+final class MarketTickerRepositoryImpl: MarketTickerRepository {
+    private let service: BinanceAllMarketTickersWebSocketService
 
-    public func fetchInitialData() async throws -> CoinData {
-        //let dto = try await api.fetchInitialData()  // 네트워크
-        return CoinData(name: "dummy")            // DTO → Domain 변환
+    init(service: BinanceAllMarketTickersWebSocketService) {
+        self.service = service
+    }
+
+    func tickerStream() -> AsyncThrowingStream<[MarketTicker], Error> {
+        service.connect()
     }
 }
