@@ -48,6 +48,15 @@ let project = Project(
                 .target(name: "CryptoBookApp")
             ]
         ),
+        .target(
+            name: "Entity",
+            destinations: .iOS,
+            product: .framework,
+            bundleId: "\(organizationName).Entity",
+            deploymentTargets: .iOS("16.0"),
+            sources: ["Targets/Entity/Sources/**"],
+            dependencies: []
+        ),
         // Domain
         .target(
             name: "Domain",
@@ -57,7 +66,9 @@ let project = Project(
             deploymentTargets: .iOS("16.0"),
             infoPlist: .default,
             sources: ["Targets/Domain/Sources/**"],
-            dependencies: []
+            dependencies: [
+                .target(name: "Entity")
+            ]
         ),
         // Data
         .target(
@@ -70,6 +81,7 @@ let project = Project(
             sources: ["Targets/Data/Sources/**"],
             dependencies: [
                 .target(name: "Domain"),
+                .target(name: "Entity"),
                 .target(name: "Infra")
             ]
         ),
