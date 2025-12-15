@@ -13,23 +13,20 @@ import Data
 
 extension Container {
 
-    // MARK: - Domain ports
+    // MARK: - Repositories
 
-    var marketTickerStreaming: Factory<any MarketTickerStreaming> {
-        self {
-            Data.MarketTickerFactory.makeStreaming()
-        }
-        .singleton
+    var marketTickerRepository: Factory<any MarketTickerRepository> {
+        self { DataFactory.makeMarketTickerRepository() }
+            .singleton
     }
-
+    
     // MARK: - TCA clients (use these from DependencyKey liveValue)
 
     var marketTickerClient: Factory<MarketTickerClient> {
         self {
-            let streaming = self.marketTickerStreaming()
             return MarketTickerClient(
                 stream: {
-                    streaming.connect()
+                    self.marketTickerRepository().tickerStream()
                 }
             )
         }

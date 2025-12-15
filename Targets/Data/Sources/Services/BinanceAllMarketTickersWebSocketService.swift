@@ -13,6 +13,8 @@ import Domain
 
 final class BinanceAllMarketTickersWebSocketService: MarketTickerStreaming {
 
+    static let shared = BinanceAllMarketTickersWebSocketService()
+
     private let urlSession: URLSession
     private var webSocketTask: URLSessionWebSocketTask?
     private let baseURL = URL(string: "wss://fstream.binance.com")!
