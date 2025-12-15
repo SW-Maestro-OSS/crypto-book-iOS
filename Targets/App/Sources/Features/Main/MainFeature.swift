@@ -75,22 +75,12 @@ struct MainFeature {
         case showMoreTapped
     }
 
-    @Dependency(\.marketTicker) var marketTicker
     
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                return .run { send in
-                    do {
-                        for try await tickers in marketTicker.stream() {
-                            await send(.tickersUpdated(tickers))
-                        }
-                    } catch {
-                        // TODO: 에러 처리 (예: 로깅, 상태 반영 등)
-                        print("⚠️ marketTicker stream error:", error)
-                    }
-                }
+                return .none
             case let .tickersUpdated(tickers):
                 state.tickers = tickers
                 return .none
