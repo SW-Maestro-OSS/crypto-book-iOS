@@ -75,7 +75,6 @@ struct MainFeature {
         case showMoreTapped
     }
 
-    
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {

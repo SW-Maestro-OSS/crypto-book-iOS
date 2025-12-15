@@ -30,8 +30,17 @@ struct MarketTickerDTO: Decodable {
     let n: Int        // Total trades
     
     func toDomain() -> MarketTicker {
-        MarketTicker(
+        let iconURL: String?
+        if s.hasSuffix("USDT") {
+            let baseSymbol = s.dropLast(4).lowercased()
+            iconURL = "https://static.coincap.io/assets/icons/\(baseSymbol)@2x.png"
+        } else {
+            iconURL = nil
+        }
+
+        return MarketTicker(
             symbol: s,
+            iconURL: iconURL,
             priceChange: Double(p) ?? 0,
             priceChangePercent: Double(P) ?? 0,
             weightedAvgPrice: Double(w) ?? 0,

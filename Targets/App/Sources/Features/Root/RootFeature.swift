@@ -9,6 +9,7 @@
 import Foundation
 import ComposableArchitecture
 import Entity
+import Infra
 
 @Reducer
 struct RootFeature {
@@ -32,6 +33,7 @@ struct RootFeature {
     
     @Dependency(\.continuousClock) var clock
     @Dependency(\.marketTicker) var marketTicker
+    @Dependency(\.imageCache) var imageCache
     
     private enum CancelID { case marketTicker }
     
@@ -65,7 +67,13 @@ struct RootFeature {
                 return .none
                 
             case let .marketTickerResponse(.success(tickers)):
-                return .send(.main(.tickersUpdated(tickers)))
+                let urls = tickers.compactMap { $0.iconURL }.compactMap(URL.init)
+                return .merge(
+                    .send(.main(.tickersUpdated(tickers))),
+                    .run { _ in
+                        await imageCache.prefetch(urls)
+                    }
+                )
                 
             case let .marketTickerResponse(.failure(error)):
                 // TODO: 에러 처리

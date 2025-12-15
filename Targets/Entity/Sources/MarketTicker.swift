@@ -10,6 +10,7 @@ import Foundation
 
 public struct MarketTicker: Equatable, Sendable {
     public let symbol: String
+    public let iconURL: String?
     public let priceChange: Double
     public let priceChangePercent: Double
     public let weightedAvgPrice: Double
@@ -21,6 +22,7 @@ public struct MarketTicker: Equatable, Sendable {
 
     public init(
         symbol: String,
+        iconURL: String?,
         priceChange: Double,
         priceChangePercent: Double,
         weightedAvgPrice: Double,
@@ -31,6 +33,7 @@ public struct MarketTicker: Equatable, Sendable {
         quoteVolume: Double
     ) {
         self.symbol = symbol
+        self.iconURL = iconURL
         self.priceChange = priceChange
         self.priceChangePercent = priceChangePercent
         self.weightedAvgPrice = weightedAvgPrice

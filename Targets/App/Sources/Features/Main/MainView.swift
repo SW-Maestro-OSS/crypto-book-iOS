@@ -1,6 +1,8 @@
 import SwiftUI
 import ComposableArchitecture
 import Domain
+import UIKit
+import Infra
 
 struct MainView: View {
     @Perception.Bindable var store: StoreOf<MainFeature>
@@ -51,10 +53,10 @@ struct MainView: View {
                     List {
                         ForEach(store.visibleTickers, id: \.symbol) { ticker in
                             HStack(spacing: 12) {
-                                // Placeholder image
-                                Image(systemName: "bitcoinsign.circle.fill")
-                                    .resizable()
+                                // Icon image
+                                CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
                                     .frame(width: 24, height: 24)
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(ticker.symbol)
@@ -109,6 +111,34 @@ struct MainView: View {
         }
     }
 }
+
+// MARK: - Subviews
+
+private struct CachedAsyncImage: View {
+    let url: URL?
+    @Dependency(\.imageCache) var imageCache
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+            } else {
+                // Placeholder
+                Image(systemName: "circle.dashed")
+                    .resizable()
+            }
+        }
+        .task(id: url) {
+            guard let url = url else { return }
+            self.image = await imageCache.image(url)
+        }
+    }
+}
+
+
+// MARK: - Helper Functions
 
 private func sortIcon(for key: MainSortKey, sortKey: MainSortKey?, sortOrder: MainSortOrder) -> String {
     guard let sortKey = sortKey, sortKey == key else {
