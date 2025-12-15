@@ -9,6 +9,7 @@
 import Foundation
 import ComposableArchitecture
 import Domain
+import Entity
 
 enum MainSortKey: Equatable {
     case symbol

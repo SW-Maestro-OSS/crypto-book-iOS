@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import Domain
+import Entity 
 
 struct MarketTickerDTO: Decodable {
     let e: String     // Event type

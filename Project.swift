@@ -9,6 +9,7 @@ let project = Project(
     name: projectName,
     organizationName: organizationName,
     packages: [
+        .remote(url: "https://github.com/hmlongco/Factory.git", requirement: .upToNextMajor(from: "2.5.1")),
         .remote(url: "https://github.com/pointfreeco/swift-composable-architecture.git", requirement: .upToNextMajor(from: "1.23.1"))
     ],
     targets: [
@@ -32,7 +33,8 @@ let project = Project(
             dependencies: [
                 .target(name: "Domain"),
                 .target(name: "Data"),
-                .package(product: "ComposableArchitecture")
+                .package(product: "ComposableArchitecture"),
+                .package(product: "Factory")
             ]
         ),
         // App Tests
@@ -82,7 +84,8 @@ let project = Project(
             dependencies: [
                 .target(name: "Domain"),
                 .target(name: "Entity"),
-                .target(name: "Infra")
+                .target(name: "Infra"),
+                .package(product: "Factory")
             ]
         ),
         // Infra

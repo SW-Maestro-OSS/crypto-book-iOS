@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Entity
 import Domain
 
 final class MarketTickerRepositoryImpl: MarketTickerRepository {
