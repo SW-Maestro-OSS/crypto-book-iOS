@@ -12,7 +12,7 @@ import Domain
 public enum DataFactory {
     public static func makeMarketTickerRepository() -> any MarketTickerRepository {
         MarketTickerRepositoryImpl(
-            service: BinanceAllMarketTickersWebSocketService.shared
+            service: BinanceAllMarketTickersWebSocketService()
         )
     }
 }

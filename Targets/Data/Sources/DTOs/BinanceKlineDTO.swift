@@ -68,7 +68,7 @@ extension BinanceKlineDTO {
         }
 
         return OHLCV(
-            openTime: Date(timeIntervalSince1970: TimeInterval(openTime) / 1000),
+            openTimeMs: openTime,
             open: open,
             high: high,
             low: low,

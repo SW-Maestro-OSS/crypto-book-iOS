@@ -13,18 +13,18 @@ import Domain
 
 final class BinanceAllMarketTickersWebSocketService: MarketTickerStreaming {
 
-    static let shared = BinanceAllMarketTickersWebSocketService()
-
     private let urlSession: URLSession
     private var webSocketTask: URLSessionWebSocketTask?
     private let baseURL = URL(string: "wss://fstream.binance.com")!
 
+    /// Create and own one instance of this service in your App/DI layer.
+    /// (No singleton required.)
     init(urlSession: URLSession = .shared) {
         self.urlSession = urlSession
     }
 
     func connect() -> AsyncThrowingStream<[MarketTicker], Error> {
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
 
         let url = baseURL.appending(path: "/ws/!ticker@arr")
         let task = urlSession.webSocketTask(with: url)
@@ -63,14 +63,14 @@ final class BinanceAllMarketTickersWebSocketService: MarketTickerStreaming {
             receiveNext()
 
             continuation.onTermination = { [weak self] _ in
-                self?.webSocketTask?.cancel(with: .goingAway, reason: nil)
+                self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
                 self?.webSocketTask = nil
             }
         }
     }
 
     func disconnect() {
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
     }
 }
