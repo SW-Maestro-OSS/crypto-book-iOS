@@ -19,4 +19,8 @@ public enum DataFactory {
     public static func makeCurrencyDetailStreaming() -> CurrencyDetailStreaming {
         CurrencyDetailStreamingImpl()
     }
+    
+    public static func fetchBinanceApi() -> BinanceApiRepository {
+        BinanceApiRepositoryImpl()
+    }
 }

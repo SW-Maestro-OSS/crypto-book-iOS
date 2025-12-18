@@ -1,0 +1,32 @@
+//
+//  BinanceApiService.swift
+//  Data
+//
+//  Created by 김정원 on 12/19/25.
+//  Copyright © 2025 io.tuist. All rights reserved.
+//
+
+import Foundation
+import Combine
+
+final class BinanceApiService {
+    private let session = URLSession.shared
+    
+    func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [BinanceKlineRestDTO] {
+        // 예: https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=7
+        let urlString = "https://api.binance.com/api/v3/klines?symbol=\(symbol.uppercased())&interval=\(interval)&limit=\(limit)"
+        
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+
+        // 바이낸스 REST API 응답은 단순 2차원 배열 형태이므로 커스텀 디코딩이 필요할 수 있습니다.
+        return try JSONDecoder().decode([BinanceKlineRestDTO].self, from: data)
+    }
+}

@@ -26,8 +26,12 @@ extension Container {
         self { DataFactory.makeCurrencyDetailStreaming() }
     }
     
+    var binanceApiRepository: Factory<any BinanceApiRepository> {
+        self { DataFactory.fetchBinanceApi() }.singleton
+    }
+    
     // MARK: - TCA clients (use these from DependencyKey liveValue)
-
+    
     var marketTickerClient: Factory<MarketTickerClient> {
         self {
             return MarketTickerClient(
@@ -37,7 +41,7 @@ extension Container {
             )
         }
     }
-
+    
     var currencyDetailStreamingClient: Factory<CurrencyDetailStreamingClient> {
         self {
             CurrencyDetailStreamingClient(
@@ -46,6 +50,21 @@ extension Container {
                 },
                 disconnect: {
                     self.currencyDetailStreaming().disconnect()
+                }
+            )
+        }
+    }
+    
+    var binanceAPIClient: Factory<BinanceAPIClient> {
+        self {
+            BinanceAPIClient(
+                fetchKlines: { symbol, interval, limit in
+                    // Container에 등록된 repository를 호출
+                    try await self.binanceApiRepository().fetchKlines(
+                        symbol: symbol,
+                        interval: interval,
+                        limit: limit
+                    )
                 }
             )
         }

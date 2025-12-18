@@ -11,7 +11,7 @@ import Foundation
 import Entity
 import Domain
 
-final class BinanceAllMarketTickersWebSocketService: MarketTickerStreaming {
+final class BinanceAllMarketTickersWebSocketService {
 
     private let urlSession: URLSession
     private var webSocketTask: URLSessionWebSocketTask?

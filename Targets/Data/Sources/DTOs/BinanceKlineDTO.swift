@@ -25,50 +25,61 @@ import Entity
 ///   10 takerBuyQuoteAssetVolume,
 ///   11 ignore
 /// ]
-struct BinanceKlineDTO: Decodable {
-
-    let openTime: Int64
-    let open: String
-    let high: String
-    let low: String
-    let close: String
-    let volume: String
-    let closeTime: Int64
-
-    init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-
-        self.openTime = try container.decode(Int64.self)
-        self.open = try container.decode(String.self)
-        self.high = try container.decode(String.self)
-        self.low = try container.decode(String.self)
-        self.close = try container.decode(String.self)
-        self.volume = try container.decode(String.self)
-        self.closeTime = try container.decode(Int64.self)
-
-        _ = try? container.decode(String.self) // quoteAssetVolume
-        _ = try? container.decode(Int.self)    // numberOfTrades
-        _ = try? container.decode(String.self) // takerBuyBaseAssetVolume
-        _ = try? container.decode(String.self) // takerBuyQuoteAssetVolume
-        _ = try? container.decode(String.self) // ignore
+public struct BinanceKlineDTO: Decodable {
+    public let eventType: String
+    public let eventTime: Int64
+    public let symbol: String
+    public let kline: KlineData
+    
+    enum CodingKeys: String, CodingKey {
+        case eventType = "e"
+        case eventTime = "E"
+        case symbol = "s"
+        case kline = "k"
+    }
+    
+    public struct KlineData: Decodable {
+        public let startTime: Int64
+        public let closeTime: Int64
+        public let interval: String
+        public let open: String
+        public let close: String
+        public let high: String
+        public let low: String
+        public let volume: String
+        public let isFinal: Bool
+        
+        enum CodingKeys: String, CodingKey {
+            case startTime = "t"
+            case closeTime = "T"
+            case interval = "i"
+            case open = "o"
+            case close = "c"
+            case high = "h"
+            case low = "l"
+            case volume = "v"
+            case isFinal = "x" // 이 값이 true일 때 캔들이 확정됨
+        }
     }
 }
 
 extension BinanceKlineDTO {
-
-    func toDomain() -> OHLCV? {
+    
+    public func toDomain() -> OHLCV? {
+        let data = self.kline
+        
         guard
-            let open = Double(open),
-            let high = Double(high),
-            let low = Double(low),
-            let close = Double(close),
-            let volume = Double(volume)
+            let open = Double(data.open),
+            let high = Double(data.high),
+            let low = Double(data.low),
+            let close = Double(data.close),
+            let volume = Double(data.volume)
         else {
             return nil
         }
-
+        
         return OHLCV(
-            openTimeMs: openTime,
+            openTimeMs: data.startTime, // DTO의 't' 필드 매핑
             open: open,
             high: high,
             low: low,
