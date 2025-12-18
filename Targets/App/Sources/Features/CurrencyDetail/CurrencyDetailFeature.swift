@@ -1,0 +1,243 @@
+//
+//  CurrencyDetailFeature.swift
+//  Data
+//
+//  Created by 김정원 on 12/18/25.
+//  Copyright © 2025 io.tuist. All rights reserved.
+//
+
+import Foundation
+import ComposableArchitecture
+import Entity
+
+@Reducer
+struct CurrencyDetailFeature {
+
+    // MARK: - State
+    @ObservableState
+    struct State: Equatable {
+        let symbol: String
+
+        // Header (live-ish)
+        var midPrice: Double?
+        var changePercent24h: Double?
+        var lastUpdated: Date?
+
+        // Chart (snapshot)
+        var candles: [OHLCV] = []
+        var chartLoading: Bool = false
+        var chartError: String?
+
+        // AI Insight (placeholder)
+        var insight: Insight?
+        var insightLoading: Bool = false
+
+        // News
+        var news: [NewsArticle] = []
+        var newsLoading: Bool = false
+        var newsError: String?
+
+        // View
+        var isFirstAppear: Bool = true
+
+        init(symbol: String) {
+            self.symbol = symbol
+        }
+    }
+
+    // MARK: - Action
+
+    enum Action: Equatable {
+        case onAppear
+        case onDisappear
+
+        // Header live updates (from WS)
+        case midPriceUpdated(Double)
+        case changePercent24hUpdated(Double)
+
+        // Chart
+        case fetchChart
+        case chartResponse(Result<[OHLCV], ChartError>)
+
+        // News
+        case fetchNews
+        case newsResponse(Result<[NewsArticle], NewsError>)
+
+        // Insight
+        case computeInsight
+        case insightComputed(Insight)
+
+        // UI
+        case refreshPulled
+        case newsItemTapped(NewsArticle)
+    }
+
+    // MARK: - Errors
+
+    enum ChartError: Error, Equatable {
+        case network(String)
+    }
+
+    enum NewsError: Error, Equatable {
+        case network(String)
+    }
+
+    // MARK: - Models
+
+    struct Insight: Equatable {
+        let buyPercent: Int
+        let sellPercent: Int
+        let bullets: [String]
+
+        init(buyPercent: Int, sellPercent: Int, bullets: [String]) {
+            self.buyPercent = buyPercent
+            self.sellPercent = sellPercent
+            self.bullets = bullets
+        }
+    }
+
+    // MARK: - Reducer
+
+    init() {}
+
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            switch action {
+            case .onAppear:
+                guard state.isFirstAppear else { return .none }
+                state.isFirstAppear = false
+
+                // Kick off snapshot fetches.
+                return .merge(
+                    .send(.fetchChart),
+                    .send(.fetchNews),
+                    .send(.computeInsight)
+                )
+
+            case .onDisappear:
+                // TODO: stop WS streams / cancel in-flight tasks when wired.
+                return .none
+
+            // MARK: Live header updates
+            case let .midPriceUpdated(value):
+                state.midPrice = value
+                state.lastUpdated = date.now
+                return .none
+
+            case let .changePercent24hUpdated(value):
+                state.changePercent24h = value
+                state.lastUpdated = date.now
+                return .none
+
+            // MARK: Chart
+            case .fetchChart:
+                state.chartLoading = true
+                state.chartError = nil
+
+                // TODO: Replace with real REST call (e.g. /api/v3/uiKlines interval=1d limit=7)
+                // For now, return empty to keep structure.
+                return .send(.chartResponse(.success([])))
+
+            case let .chartResponse(.success(candles)):
+                state.chartLoading = false
+                state.candles = candles
+                return .send(.computeInsight)
+
+            case let .chartResponse(.failure(error)):
+                state.chartLoading = false
+                state.chartError = {
+                    switch error {
+                    case let .network(message): return message
+                    }
+                }()
+                return .none
+
+            // MARK: News
+            case .fetchNews:
+                state.newsLoading = true
+                state.newsError = nil
+
+                // TODO: Replace with real CryptoPanic fetch
+                return .send(.newsResponse(.success([])))
+
+            case let .newsResponse(.success(items)):
+                state.newsLoading = false
+                state.news = items
+                return .send(.computeInsight)
+
+            case let .newsResponse(.failure(error)):
+                state.newsLoading = false
+                state.newsError = {
+                    switch error {
+                    case let .network(message): return message
+                    }
+                }()
+                return .none
+
+            // MARK: Insight
+            case .computeInsight:
+                // Very small rule-based placeholder:
+                state.insightLoading = true
+
+                let insight = Self.makePlaceholderInsight(
+                    symbol: state.symbol,
+                    candles: state.candles,
+                    news: state.news
+                )
+                return .send(.insightComputed(insight))
+
+            case let .insightComputed(insight):
+                state.insightLoading = false
+                state.insight = insight
+                return .none
+
+            // MARK: UI
+            case .refreshPulled:
+                return .merge(
+                    .send(.fetchChart),
+                    .send(.fetchNews)
+                )
+
+            case .newsItemTapped:
+                // The View should handle opening the URL (system browser).
+                return .none
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    static func makePlaceholderInsight(
+        symbol: String,
+        candles: [OHLCV],
+        news: [NewsArticle]
+    ) -> Insight {
+        var buy = 50
+        var sell = 50
+
+        if let first = candles.first, let last = candles.last {
+            if last.close > first.open {
+                buy = 70
+                sell = 30
+            } else if last.close < first.open {
+                buy = 30
+                sell = 70
+            }
+        }
+
+        var bullets: [String] = []
+        bullets.append("현재 \(symbol)의 추세를 기반으로 한 간단 분석입니다.")
+
+        if !candles.isEmpty {
+            bullets.append("최근 7일(1D) 캔들 흐름을 반영했습니다.")
+        }
+
+        if !news.isEmpty {
+            bullets.append("관련 뉴스 신호를 함께 고려했습니다.")
+        } else {
+            bullets.append("현재는 뉴스 데이터가 없어 차트 중심으로 판단합니다.")
+        }
+
+        return Insight(buyPercent: buy, sellPercent: sell, bullets: bullets)
+    }
+}

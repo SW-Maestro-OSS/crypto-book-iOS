@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MarketView: View {
+struct CurrencyDetailView: View {
     var body: some View {
         NavigationView {
             Text("Market View")
@@ -10,5 +10,5 @@ struct MarketView: View {
 }
 
 #Preview {
-    MarketView()
+    CurrencyDetailView()
 }

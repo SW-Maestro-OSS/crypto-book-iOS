@@ -32,6 +32,8 @@ struct MainFeature {
         var sortOrder: MainSortOrder = .ascending
         var visibleCount: Int = 10
 
+        @Presents var destination: Destination.State?
+
         // Derived collections for presentation
         var top30Tickers: [MarketTicker] {
             tickers
@@ -73,6 +75,13 @@ struct MainFeature {
         case sortByPriceTapped
         case sortByChangeTapped
         case showMoreTapped
+        case tickerTapped(String)
+        case destination(PresentationAction<Destination.Action>)
+    }
+
+    @Reducer
+    enum Destination {
+        case currencyDetail(CurrencyDetailFeature)
     }
 
     var body: some Reducer<State, Action> {
@@ -114,7 +123,15 @@ struct MainFeature {
             case .showMoreTapped:
                 state.visibleCount = 30
                 return .none
+
+            case let .tickerTapped(symbol):
+                state.destination = .currencyDetail(.init(symbol: symbol))
+                return .none
+
+            case .destination:
+                return .none
             }
         }
+        .ifLet(\.$destination, action: \.destination)
     }
 }
