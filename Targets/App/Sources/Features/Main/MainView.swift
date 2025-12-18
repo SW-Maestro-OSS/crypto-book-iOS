@@ -10,97 +10,99 @@ struct MainView: View {
     var body: some View {
         WithPerceptionTracking {
             TabView {
-                VStack(spacing: 0) {
-                    // Header with sort buttons
-                    HStack {
-                        Button {
-                            store.send(.sortBySymbolTapped)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("Symbol")
-                                Image(systemName: sortIcon(for: .symbol, sortKey: store.sortKey, sortOrder: store.sortOrder))
-                            }
-                        }
-
-                        Spacer()
-
-                        Button {
-                            store.send(.sortByPriceTapped)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("Price ($)")
-                                Image(systemName: sortIcon(for: .price, sortKey: store.sortKey, sortOrder: store.sortOrder))
-                            }
-                        }
-
-                        Spacer()
-
-                        Button {
-                            store.send(.sortByChangeTapped)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("24h Change %")
-                                Image(systemName: sortIcon(for: .changePercent, sortKey: store.sortKey, sortOrder: store.sortOrder))
-                            }
-                        }
-                    }
-                    .font(.caption.bold())
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-
-                    Divider()
-
-                    List {
-                        ForEach(store.visibleTickers, id: \.symbol) { ticker in
-                            HStack(spacing: 12) {
-                                // Icon image
-                                CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
-                                    .frame(width: 24, height: 24)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(ticker.symbol)
-                                        .font(.subheadline.bold())
-                                    Text("Vol: \(Int(ticker.quoteVolume))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                VStack(alignment: .trailing, spacing: 4) {
-                                    Text(String(format: "%.4f", ticker.lastPrice))
-                                        .font(.subheadline)
-
-                                    let change = ticker.priceChangePercent
-                                    Text(String(format: "%.2f%%", change))
-                                        .font(.caption.bold())
-                                        .foregroundStyle(changeColor(change))
+                // 1. NavigationStack 추가 (Push 네비게이션을 위해 필수)
+                NavigationStack {
+                    VStack(spacing: 0) {
+                        // Header with sort buttons (기존 코드 유지)
+                        HStack {
+                            Button { store.send(.sortBySymbolTapped) } label: {
+                                HStack(spacing: 4) {
+                                    Text("Symbol")
+                                    Image(systemName: sortIcon(for: .symbol, sortKey: store.sortKey, sortOrder: store.sortOrder))
                                 }
                             }
-                            .padding(.vertical, 4)
+                            Spacer()
+                            Button { store.send(.sortByPriceTapped) } label: {
+                                HStack(spacing: 4) {
+                                    Text("Price ($)")
+                                    Image(systemName: sortIcon(for: .price, sortKey: store.sortKey, sortOrder: store.sortOrder))
+                                }
+                            }
+                            Spacer()
+                            Button { store.send(.sortByChangeTapped) } label: {
+                                HStack(spacing: 4) {
+                                    Text("24h Change %")
+                                    Image(systemName: sortIcon(for: .changePercent, sortKey: store.sortKey, sortOrder: store.sortOrder))
+                                }
+                            }
                         }
+                        .font(.caption.bold())
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
 
-                        if store.sortedTickers.count > store.visibleCount && store.visibleCount < 30 {
-                            Button {
-                                store.send(.showMoreTapped)
-                            } label: {
-                                HStack {
+                        Divider()
+
+                        List {
+                            ForEach(store.visibleTickers, id: \.symbol) { ticker in
+                                HStack(spacing: 12) {
+                                    // Icon image
+                                    CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
+                                        .frame(width: 24, height: 24)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(ticker.symbol)
+                                            .font(.subheadline.bold())
+                                        Text("Vol: \(Int(ticker.quoteVolume))")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
                                     Spacer()
-                                    Text("더 보기")
-                                    Spacer()
+
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        Text(String(format: "%.4f", ticker.lastPrice))
+                                            .font(.subheadline)
+
+                                        let change = ticker.priceChangePercent
+                                        Text(String(format: "%.2f%%", change))
+                                            .font(.caption.bold())
+                                            .foregroundStyle(changeColor(change))
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                                .contentShape(Rectangle()) // 빈 공간 터치 인식 개선
+                                // 2. 탭 제스처 추가: 리스트 아이템 클릭 시 액션 전달
+                                .onTapGesture {
+                                    store.send(.tickerTapped(ticker.symbol))
+                                }
+                            }
+
+                            if store.sortedTickers.count > store.visibleCount && store.visibleCount < 30 {
+                                Button {
+                                    store.send(.showMoreTapped)
+                                } label: {
+                                    HStack {
+                                        Spacer()
+                                        Text("더 보기")
+                                        Spacer()
+                                    }
                                 }
                             }
                         }
+                        .listStyle(.plain)
                     }
-                    .listStyle(.plain)
+                    .navigationDestination(
+                        item: $store.scope(state: \.destination?.currencyDetail, action: \.destination.currencyDetail)
+                    ) { detailStore in
+                        CurrencyDetailView(store: detailStore)
+                    }
                 }
-
                 .tabItem {
                     Label("Market", systemImage: "list.bullet")
                 }
 
-                SettingsView()    // 나중에 Feature로 바꿀 예정
+                SettingsView()
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }
