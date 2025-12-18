@@ -9,6 +9,7 @@
 import Foundation
 import ComposableArchitecture
 import Entity
+import Domain
 
 @Reducer
 struct CurrencyDetailFeature {
@@ -54,6 +55,7 @@ struct CurrencyDetailFeature {
         // Header live updates (from WS)
         case midPriceUpdated(Double)
         case changePercent24hUpdated(Double)
+        case tickReceived(CurrencyDetailTick)
 
         // Chart
         case fetchChart
@@ -82,6 +84,10 @@ struct CurrencyDetailFeature {
         case network(String)
     }
 
+    enum CancelID {
+        case detailSocket
+    }
+
     // MARK: - Models
 
     struct Insight: Equatable {
@@ -97,6 +103,7 @@ struct CurrencyDetailFeature {
     }
 
     // MARK: - Reducer
+    @Dependency(\.currencyDetailStreaming) var streaming
 
     init() {}
 
@@ -111,22 +118,42 @@ struct CurrencyDetailFeature {
                 return .merge(
                     .send(.fetchChart),
                     .send(.fetchNews),
-                    .send(.computeInsight)
+                    .send(.computeInsight),
+                    .run { [symbol = state.symbol] send in
+                        do {
+                            for try await tick in streaming.connect(symbol) {
+                                await send(.tickReceived(tick))
+                            }
+                        } catch {
+                            // Swallow streaming errors for now; UI can stay on last known values.
+                        }
+                    }
+                    .cancellable(id: CancelID.detailSocket, cancelInFlight: true)
                 )
 
             case .onDisappear:
-                // TODO: stop WS streams / cancel in-flight tasks when wired.
-                return .none
+                streaming.disconnect()
+                return .cancel(id: CancelID.detailSocket)
 
             // MARK: Live header updates
             case let .midPriceUpdated(value):
                 state.midPrice = value
-               // state.lastUpdated = date.now
+                state.lastUpdated = Date()
                 return .none
 
             case let .changePercent24hUpdated(value):
                 state.changePercent24h = value
-             //   state.lastUpdated = date.now
+                state.lastUpdated = Date()
+                return .none
+
+            case let .tickReceived(tick):
+                if let mid = tick.midPrice {
+                    state.midPrice = mid
+                }
+                if let change = tick.changePercent24h {
+                    state.changePercent24h = change
+                }
+                state.lastUpdated = Date()
                 return .none
 
             // MARK: Chart
