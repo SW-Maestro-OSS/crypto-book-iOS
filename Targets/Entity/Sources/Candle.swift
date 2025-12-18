@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct Candle: Equatable, Identifiable {
+public struct OHLCV: Equatable, Identifiable {
     public var id: Int64 { openTimeMs }
 
     public let openTimeMs: Int64

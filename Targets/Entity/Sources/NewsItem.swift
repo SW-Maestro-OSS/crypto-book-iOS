@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct NewsItem: Equatable, Identifiable {
+public struct NewsArticle: Equatable, Identifiable {
     public var id: String { originalURL.absoluteString }
 
     public let title: String

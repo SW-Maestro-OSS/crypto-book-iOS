@@ -34,6 +34,13 @@ struct MainFeature {
 
         @Presents var destination: Destination.State?
 
+        static func == (lhs: State, rhs: State) -> Bool {
+            lhs.tickers == rhs.tickers
+            && lhs.sortKey == rhs.sortKey
+            && lhs.sortOrder == rhs.sortOrder
+            && lhs.visibleCount == rhs.visibleCount
+        }
+
         // Derived collections for presentation
         var top30Tickers: [MarketTicker] {
             tickers

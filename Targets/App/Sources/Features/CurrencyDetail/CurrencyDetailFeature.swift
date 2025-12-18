@@ -1,6 +1,6 @@
 //
 //  CurrencyDetailFeature.swift
-//  Data
+//  CryptoBookApp
 //
 //  Created by 김정원 on 12/18/25.
 //  Copyright © 2025 io.tuist. All rights reserved.
@@ -121,12 +121,12 @@ struct CurrencyDetailFeature {
             // MARK: Live header updates
             case let .midPriceUpdated(value):
                 state.midPrice = value
-                state.lastUpdated = date.now
+               // state.lastUpdated = date.now
                 return .none
 
             case let .changePercent24hUpdated(value):
                 state.changePercent24h = value
-                state.lastUpdated = date.now
+             //   state.lastUpdated = date.now
                 return .none
 
             // MARK: Chart
