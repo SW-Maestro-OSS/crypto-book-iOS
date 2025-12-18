@@ -19,4 +19,14 @@ public struct CurrencyDetailTick: Equatable, Sendable {
     public let symbol: String
     public let midPrice: Double?           // bookTicker
     public let changePercent24h: Double?   // 24hr ticker
+        
+    public init(
+        symbol: String,
+        midPrice: Double?,
+        changePercent24h: Double?
+    ) {
+        self.symbol = symbol
+        self.midPrice = midPrice
+        self.changePercent24h = changePercent24h
+    }
 }

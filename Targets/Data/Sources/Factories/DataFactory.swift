@@ -15,4 +15,8 @@ public enum DataFactory {
             service: BinanceAllMarketTickersWebSocketService()
         )
     }
+
+    public static func makeCurrencyDetailStreaming() -> CurrencyDetailStreaming {
+        CurrencyDetailStreamingImpl()
+    }
 }

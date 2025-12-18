@@ -20,6 +20,12 @@ extension Container {
             .singleton
     }
     
+    // MARK: - Services
+
+    var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
+        self { DataFactory.makeCurrencyDetailStreaming() }
+    }
+    
     // MARK: - TCA clients (use these from DependencyKey liveValue)
 
     var marketTickerClient: Factory<MarketTickerClient> {
@@ -27,6 +33,19 @@ extension Container {
             return MarketTickerClient(
                 stream: {
                     self.marketTickerRepository().tickerStream()
+                }
+            )
+        }
+    }
+
+    var currencyDetailStreamingClient: Factory<CurrencyDetailStreamingClient> {
+        self {
+            CurrencyDetailStreamingClient(
+                connect: { symbol in
+                    self.currencyDetailStreaming().connect(symbol: symbol)
+                },
+                disconnect: {
+                    self.currencyDetailStreaming().disconnect()
                 }
             )
         }
