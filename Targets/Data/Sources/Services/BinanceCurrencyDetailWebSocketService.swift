@@ -8,7 +8,7 @@
 import Foundation
 import Domain
 
-final class BinanceCurrencyDetailWebSocketService: @unchecked Sendable {
+final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSource, @unchecked Sendable {
 
     private let session: URLSession
     private var webSocketTask: URLSessionWebSocketTask?

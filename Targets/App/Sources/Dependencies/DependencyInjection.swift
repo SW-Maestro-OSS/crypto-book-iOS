@@ -16,18 +16,18 @@ extension Container {
     // MARK: - Repositories
 
     var marketTickerRepository: Factory<any MarketTickerRepository> {
-        self { DataFactory.makeMarketTickerRepository() }
+        self { MarketTickerRepositoryImpl() }
             .singleton
     }
-    
+
     // MARK: - Services
 
     var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
-        self { DataFactory.makeCurrencyDetailStreaming() }
+        self { CurrencyDetailStreamingImpl() }
     }
-    
+
     var binanceApiRepository: Factory<any BinanceApiRepository> {
-        self { DataFactory.fetchBinanceApi() }.singleton
+        self { BinanceApiRepositoryImpl() }.singleton
     }
     
     // MARK: - TCA clients (use these from DependencyKey liveValue)

@@ -10,16 +10,19 @@ import Foundation
 import Domain
 import Entity
 
-final class BinanceApiRepositoryImpl: BinanceApiRepository {
-    private let apiService: BinanceApiService // 위에서 만드신 서비스
-    
-    init(apiService: BinanceApiService = BinanceApiService()) {
-        self.apiService = apiService
+public final class BinanceApiRepositoryImpl: BinanceApiRepository {
+    private let remoteDataSource: BinanceApiRemoteDataSource
+
+    public init() {
+        self.remoteDataSource = BinanceApiService()
     }
-    
-    func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [OHLCV] {
-        // 1. 서비스를 통해 DTO 배열을 받아옵니다.
-        let dtos = try await apiService.fetchKlines(
+
+    init(remoteDataSource: BinanceApiRemoteDataSource) {
+        self.remoteDataSource = remoteDataSource
+    }
+
+    public func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [OHLCV] {
+        let dtos = try await remoteDataSource.fetchKlines(
             symbol: symbol,
             interval: interval,
             limit: limit

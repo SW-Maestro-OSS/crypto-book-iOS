@@ -9,19 +9,23 @@
 import Foundation
 import Domain
 
-final class CurrencyDetailStreamingImpl: CurrencyDetailStreaming, @unchecked Sendable {
+public final class CurrencyDetailStreamingImpl: CurrencyDetailStreaming, @unchecked Sendable {
 
-    private let service: BinanceCurrencyDetailWebSocketService
+    private let remoteDataSource: CurrencyDetailRemoteDataSource
 
-    init(service: BinanceCurrencyDetailWebSocketService = BinanceCurrencyDetailWebSocketService()) {
-        self.service = service
+    public init() {
+        self.remoteDataSource = BinanceCurrencyDetailWebSocketService()
     }
 
-    func connect(symbol: String) -> AsyncThrowingStream<CurrencyDetailTick, Error> {
-        service.connect(symbol: symbol)
+    init(remoteDataSource: CurrencyDetailRemoteDataSource) {
+        self.remoteDataSource = remoteDataSource
     }
 
-    func disconnect() {
-        service.disconnect()
+    public func connect(symbol: String) -> AsyncThrowingStream<CurrencyDetailTick, Error> {
+        remoteDataSource.connect(symbol: symbol)
+    }
+
+    public func disconnect() {
+        remoteDataSource.disconnect()
     }
 }

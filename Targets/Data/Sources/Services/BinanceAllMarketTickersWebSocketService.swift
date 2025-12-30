@@ -6,12 +6,11 @@
 //  Copyright © 2025 io.tuist. All rights reserved.
 //
 
-// Data/Sources/Market/BinanceAllMarketTickersWebSocketService.swift
 import Foundation
 import Entity
 import Domain
 
-final class BinanceAllMarketTickersWebSocketService {
+final class BinanceAllMarketTickersWebSocketService: MarketTickerRemoteDataSource {
 
     private let urlSession: URLSession
     private var webSocketTask: URLSessionWebSocketTask?

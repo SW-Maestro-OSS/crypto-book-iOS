@@ -10,14 +10,18 @@ import Foundation
 import Entity
 import Domain
 
-final class MarketTickerRepositoryImpl: MarketTickerRepository {
-    private let service: BinanceAllMarketTickersWebSocketService
+public final class MarketTickerRepositoryImpl: MarketTickerRepository {
+    private let remoteDataSource: MarketTickerRemoteDataSource
 
-    init(service: BinanceAllMarketTickersWebSocketService) {
-        self.service = service
+    public init() {
+        self.remoteDataSource = BinanceAllMarketTickersWebSocketService()
     }
 
-    func tickerStream() -> AsyncThrowingStream<[MarketTicker], Error> {
-        service.connect()
+    init(remoteDataSource: MarketTickerRemoteDataSource) {
+        self.remoteDataSource = remoteDataSource
+    }
+
+    public func tickerStream() -> AsyncThrowingStream<[MarketTicker], Error> {
+        remoteDataSource.connect()
     }
 }

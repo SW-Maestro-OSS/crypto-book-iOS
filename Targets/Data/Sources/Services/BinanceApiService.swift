@@ -9,7 +9,7 @@
 import Foundation
 import Combine
 
-final class BinanceApiService {
+final class BinanceApiService: BinanceApiRemoteDataSource {
     private let session = URLSession.shared
     
     func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [BinanceKlineRestDTO] {
