@@ -13,7 +13,12 @@ struct CurrencyDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // 1. Header Section: 실시간 가격 및 등락률
-                    headerSection
+                    headerSection(
+                        midPrice: store.midPrice,
+                        previousClosePrice: store.previousClosePrice,
+                        priceChange24h: store.priceChange24h,
+                        changePercent24h: store.changePercent24h
+                    )
                     
                     Divider()
 
@@ -34,20 +39,22 @@ struct CurrencyDetailView: View {
             }
             .navigationTitle(store.symbol)
             .navigationBarTitleDisplayMode(.inline)
-            .refreshable {
-                // 당겨서 새로고침
-                await store.send(.refreshPulled).finish()
-            }
+            
             .onAppear { store.send(.onAppear) }
         }
     }
 
     // MARK: - Subviews
 
-    private var headerSection: some View {
+    private func headerSection(
+        midPrice: Double?,
+        previousClosePrice: Double?,
+        priceChange24h: Double?,
+        changePercent24h: Double?
+    ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .bottom) {
-                if let midPrice = store.midPrice {
+                if let midPrice {
                     Text(String(format: "%.4f", midPrice))
                         .font(.system(size: 32, weight: .bold, design: .monospaced))
                 } else {
@@ -61,22 +68,22 @@ struct CurrencyDetailView: View {
                     .padding(.bottom, 6)
             }
 
-            if let change = store.changePercent24h {
-                HStack {
-                    Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    Text(String(format: "%.2f%%", change))
-                    Text("지난 24시간")
+            if let prevClose = previousClosePrice,
+               let priceChange = priceChange24h,
+               let percentChange = changePercent24h {
+                
+                let sign = priceChange >= 0 ? "+" : ""
+                let color: Color = priceChange >= 0 ? .green : .red
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("어제의 종가 \(String(format: "%.2f", prevClose))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    
+                    Text("\(sign)\(String(format: "%.2f", priceChange)) (\(sign)\(String(format: "%.2f", percentChange))%)")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(color)
                 }
-                .font(.subheadline.bold())
-                .foregroundStyle(change >= 0 ? .green : .red) // 양전 초록, 음전 빨강
-            }
-            
-            if let lastUpdated = store.lastUpdated {
-                Text("최근 업데이트: \(lastUpdated.formatted(date: .omitted, time: .standard))")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
             }
         }
     }

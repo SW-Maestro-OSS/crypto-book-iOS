@@ -18,11 +18,12 @@ struct CurrencyDetailFeature {
     @ObservableState
     struct State: Equatable {
         let symbol: String
+        let previousClosePrice: Double?
 
         // Header (live-ish)
         var midPrice: Double?
+        var priceChange24h: Double?
         var changePercent24h: Double?
-        var lastUpdated: Date?
 
         // Chart (snapshot)
         var candles: [Candle] = []
@@ -41,8 +42,11 @@ struct CurrencyDetailFeature {
         // View
         var isFirstAppear: Bool = true
 
-        init(symbol: String) {
+        init(symbol: String, previousClosePrice: Double?, priceChange24h: Double?, changePercent24h: Double?) {
             self.symbol = symbol
+            self.previousClosePrice = previousClosePrice
+            self.priceChange24h = priceChange24h
+            self.changePercent24h = changePercent24h
         }
     }
 
@@ -51,27 +55,14 @@ struct CurrencyDetailFeature {
     enum Action: Equatable {
         case onAppear
         case onDisappear
-
-        // Header live updates (from WS)
-        case midPriceUpdated(Double)
-        case changePercent24hUpdated(Double)
         case tickReceived(CurrencyDetailTick)
-
-        // Chart
         case fetchChart
         case chartResponse(Result<[Candle], ChartError>)
-        case candleUpdated(Candle)
-
-        // News
+        case candleUpdated(Result<Candle, Error>)
         case fetchNews
         case newsResponse(Result<[NewsArticle], NewsError>)
-
-        // Insight
         case computeInsight
         case insightComputed(Insight)
-
-        // UI
-        case refreshPulled
         case newsItemTapped(NewsArticle)
     }
 
@@ -152,11 +143,14 @@ struct CurrencyDetailFeature {
             case let .tickReceived(tick):
                 if let mid = tick.midPrice {
                     state.midPrice = mid
+                    // Recalculate absolute change based on the new mid-price
+                    if let prevClose = state.previousClosePrice {
+                        state.priceChange24h = mid - prevClose
+                    }
                 }
                 if let change = tick.changePercent24h {
                     state.changePercent24h = change
                 }
-                state.lastUpdated = Date()
                 return .none
 
             // MARK: Chart
@@ -201,22 +195,23 @@ struct CurrencyDetailFeature {
                 return .none
 
             case let .candleUpdated(candle):
-                // Update or append the latest candle
-                if var existingCandles = Optional(state.candles), !existingCandles.isEmpty {
-                    // Check if this candle matches the last one (same openTimeMs)
-                    if let lastIndex = existingCandles.indices.last,
-                       existingCandles[lastIndex].openTimeMs == candle.openTimeMs {
-                        // Update existing candle
-                        existingCandles[lastIndex] = candle
-                    } else if candle.openTimeMs > (existingCandles.last?.openTimeMs ?? 0) {
-                        // New candle started, append it
-                        existingCandles.append(candle)
-                        // Keep only last 7 candles
-                        if existingCandles.count > 7 {
-                            existingCandles.removeFirst()
-                        }
+                print("🕯️ Candle Updated: \(candle)")
+                guard !state.candles.isEmpty else { return .none }
+
+                let calendar = Calendar.current
+                if let lastCandle = state.candles.last,
+                   calendar.isDate(
+                    Date(timeIntervalSince1970: TimeInterval(lastCandle.openTimeMs) / 1000),
+                    inSameDayAs: Date(timeIntervalSince1970: TimeInterval(candle.openTimeMs) / 1000)
+                   ) {
+                    // It's an update for the last candle (today).
+                    state.candles[state.candles.count - 1] = candle
+                } else if let lastCandle = state.candles.last, candle.openTimeMs > lastCandle.openTimeMs {
+                    // A new day's candle has arrived.
+                    state.candles.append(candle)
+                    if state.candles.count > 7 {
+                        state.candles.removeFirst()
                     }
-                    state.candles = existingCandles
                 }
                 return .none
 
@@ -259,12 +254,7 @@ struct CurrencyDetailFeature {
                 state.insight = insight
                 return .none
 
-            // MARK: UI
-            case .refreshPulled:
-                return .merge(
-                    .send(.fetchChart),
-                    .send(.fetchNews)
-                )
+            
 
             case .newsItemTapped:
                 // The View should handle opening the URL (system browser).

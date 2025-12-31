@@ -125,7 +125,18 @@ struct MainFeature {
                 return .none
 
             case let .tickerTapped(symbol):
-                state.destination = .currencyDetail(.init(symbol: symbol))
+                guard let ticker = state.tickers.first(where: { $0.symbol == symbol }) else {
+                    return .none
+                }
+                let previousClosePrice = ticker.lastPrice - ticker.priceChange
+                state.destination = .currencyDetail(
+                    .init(
+                        symbol: symbol,
+                        previousClosePrice: previousClosePrice,
+                        priceChange24h: ticker.priceChange,
+                        changePercent24h: ticker.priceChangePercent
+                    )
+                )
                 return .none
 
             case .destination:
