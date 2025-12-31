@@ -44,50 +44,55 @@ struct MainView: View {
 
                         List {
                             ForEach(store.visibleTickers, id: \.symbol) { ticker in
-                                HStack(spacing: 12) {
-                                    // Icon image
-                                    CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
-                                        .frame(width: 24, height: 24)
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                WithPerceptionTracking {
+                                    HStack(spacing: 12) {
+                                        // Icon image
+                                        CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
+                                            .frame(width: 24, height: 24)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
 
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(ticker.symbol)
-                                            .font(.subheadline.bold())
-                                        Text("Vol: \(Int(ticker.quoteVolume))")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(ticker.symbol)
+                                                .font(.subheadline.bold())
+                                            Text("Vol: \(Int(ticker.quoteVolume))")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
 
-                                    Spacer()
+                                        Spacer()
 
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        Text(String(format: "%.4f", ticker.lastPrice))
+                                        VStack(alignment: .trailing, spacing: 4) {
+                                            Text(
+                                                PriceFormatter.format(
+                                                    price: ticker.lastPrice,
+                                                    currency: store.settings.selectedCurrency,
+                                                    exchangeRate: store.exchangeRate
+                                                )
+                                            )
                                             .font(.subheadline)
 
-                                        let change = ticker.priceChangePercent
-                                        Text(String(format: "%.2f%%", change))
-                                            .font(.caption.bold())
-                                            .foregroundStyle(changeColor(change))
+                                            let change = ticker.priceChangePercent
+                                            Text(String(format: "%.2f%%", change))
+                                                .font(.caption.bold())
+                                                .foregroundStyle(changeColor(change))
+                                        }
                                     }
-                                }
-                                .padding(.vertical, 4)
-                                .contentShape(Rectangle()) // 빈 공간 터치 인식 개선
-                                // 2. 탭 제스처 추가: 리스트 아이템 클릭 시 액션 전달
-                                .onTapGesture {
-                                    store.send(.tickerTapped(ticker.symbol))
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        store.send(.tickerTapped(ticker.symbol))
+                                    }
+                                    .onAppear {
+                                        if ticker.symbol == store.visibleTickers.last?.symbol {
+                                            store.send(.loadMore)
+                                        }
+                                    }
                                 }
                             }
 
-                            if store.sortedTickers.count > store.visibleCount && store.visibleCount < 30 {
-                                Button {
-                                    store.send(.showMoreTapped)
-                                } label: {
-                                    HStack {
-                                        Spacer()
-                                        Text("더 보기")
-                                        Spacer()
-                                    }
-                                }
+                            if store.visibleCount < store.sortedTickers.count {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity, alignment: .center)
                             }
                         }
                         .listStyle(.plain)
@@ -102,7 +107,7 @@ struct MainView: View {
                     Label("Market", systemImage: "list.bullet")
                 }
 
-                SettingsView()
+                SettingsView(store: store.scope(state: \.settings, action: \.settings))
                     .tabItem {
                         Label("Settings", systemImage: "gear")
                     }

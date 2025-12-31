@@ -17,6 +17,7 @@ struct RootFeature {
     struct State: Equatable {
         var route: Route = .splash
         var main = MainFeature.State()
+        var exchangeRate: Double?
     }
 
     enum Route {
@@ -28,13 +29,15 @@ struct RootFeature {
         case onAppear
         case splashTimerFinished
         case marketTickerResponse(Result<[MarketTicker], Error>)
+        case exchangeRateResponse(Result<Double, Error>)
         case main(MainFeature.Action)
     }
     
     @Dependency(\.continuousClock) var clock
     @Dependency(\.marketTicker) var marketTicker
     @Dependency(\.imageCache) var imageCache
-    
+    @Dependency(\.exchangeRateClient) var exchangeRateClient
+
     private enum CancelID { case marketTicker }
     
     var body: some Reducer<State, Action> {
@@ -59,7 +62,13 @@ struct RootFeature {
                             await send(.marketTickerResponse(.failure(error)))
                         }
                     }
-                    .cancellable(id: CancelID.marketTicker)
+                    .cancellable(id: CancelID.marketTicker),
+                    .run { send in
+                        print("[RootFeature] Fetching exchange rate...")
+                        await send(.exchangeRateResponse(Result {
+                            try await exchangeRateClient.fetchUSDtoKRW()
+                        }))
+                    }
                 )
                 
             case .splashTimerFinished:
@@ -76,10 +85,18 @@ struct RootFeature {
                 )
                 
             case let .marketTickerResponse(.failure(error)):
-                // TODO: 에러 처리
                 print("⚠️ marketTicker stream error:", error)
                 return .none
-                
+
+            case let .exchangeRateResponse(.success(rate)):
+                state.exchangeRate = rate
+                print("[RootFeature] Exchange rate fetched: \(rate) KRW/USD")
+                return .send(.main(.setExchangeRate(rate)))
+
+            case let .exchangeRateResponse(.failure(error)):
+                print("⚠️ exchangeRate fetch error:", error)
+                return .none
+
             case .main:
                 return .none
             }

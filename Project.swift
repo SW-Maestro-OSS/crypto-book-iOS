@@ -3,6 +3,17 @@ import ProjectDescription
 let projectName = "CryptoBook"
 let organizationName = "io.tuist"
 
+let appSettings: Settings = .settings(
+    base: [
+        "MARKETING_VERSION": "1.0",
+        "CURRENT_PROJECT_VERSION": "1"
+    ],
+    configurations: [
+        .debug(name: "Debug", xcconfig: "Configs/Secrets.xcconfig"),
+        .release(name: "Release", xcconfig: "Configs/Secrets.xcconfig")
+    ]
+)
+
 // MARK: - Project
 
 let project = Project(
@@ -12,6 +23,7 @@ let project = Project(
         .remote(url: "https://github.com/hmlongco/Factory.git", requirement: .upToNextMajor(from: "2.5.1")),
         .remote(url: "https://github.com/pointfreeco/swift-composable-architecture.git", requirement: .upToNextMajor(from: "1.23.1"))
     ],
+    settings: appSettings,
     targets: [
         // App
         .target(
@@ -26,6 +38,16 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
+                    "API_KEY": "$(API_KEY)", // Expose variable from xcconfig to Info.plist
+                    "NSAppTransportSecurity": .dictionary([
+                        "NSExceptionDomains": .dictionary([
+                            "www.koreaexim.go.kr": .dictionary([
+                                "NSIncludesSubdomains": .boolean(true),
+                                "NSExceptionRequiresForwardSecrecy": .boolean(false),
+                                "NSExceptionMinimumTLSVersion": .string("TLSv1.2")
+                            ])
+                        ])
+                    ])
                 ]
             ),
             sources: ["Targets/App/Sources/**"],

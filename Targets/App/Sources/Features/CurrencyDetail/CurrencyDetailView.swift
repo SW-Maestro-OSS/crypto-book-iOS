@@ -17,7 +17,9 @@ struct CurrencyDetailView: View {
                         midPrice: store.midPrice,
                         previousClosePrice: store.previousClosePrice,
                         priceChange24h: store.priceChange24h,
-                        changePercent24h: store.changePercent24h
+                        changePercent24h: store.changePercent24h,
+                        currency: store.selectedCurrency,
+                        exchangeRate: store.exchangeRate
                     )
                     
                     Divider()
@@ -50,37 +52,44 @@ struct CurrencyDetailView: View {
         midPrice: Double?,
         previousClosePrice: Double?,
         priceChange24h: Double?,
-        changePercent24h: Double?
+        changePercent24h: Double?,
+        currency: CurrencyUnit,
+        exchangeRate: Double?
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .bottom) {
                 if let midPrice {
-                    Text(String(format: "%.4f", midPrice))
+                    Text(PriceFormatter.format(price: midPrice, currency: currency, exchangeRate: exchangeRate))
                         .font(.system(size: 32, weight: .bold, design: .monospaced))
                 } else {
                     Text("---")
                         .font(.system(size: 32, weight: .bold))
                 }
-                
-                Text("USDT")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 6)
+
+                if currency == .usd {
+                    Text("USDT")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 6)
+                }
             }
 
             if let prevClose = previousClosePrice,
                let priceChange = priceChange24h,
                let percentChange = changePercent24h {
-                
+
                 let sign = priceChange >= 0 ? "+" : ""
                 let color: Color = priceChange >= 0 ? .green : .red
-                
+
+                let formattedPrevClose = PriceFormatter.format(price: prevClose, currency: currency, exchangeRate: exchangeRate)
+                let formattedPriceChange = PriceFormatter.format(price: abs(priceChange), currency: currency, exchangeRate: exchangeRate)
+
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("어제의 종가 \(String(format: "%.2f", prevClose))")
+                    Text("어제의 종가 \(formattedPrevClose)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    
-                    Text("\(sign)\(String(format: "%.2f", priceChange)) (\(sign)\(String(format: "%.2f", percentChange))%)")
+
+                    Text("\(sign)\(formattedPriceChange) (\(sign)\(String(format: "%.2f", percentChange))%)")
                         .font(.subheadline.bold())
                         .foregroundStyle(color)
                 }

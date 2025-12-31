@@ -20,6 +20,11 @@ extension Container {
             .singleton
     }
 
+    var exchangeRateRepository: Factory<any ExchangeRateRepository> {
+        self { ExchangeRateRepositoryImpl() }
+            .singleton
+    }
+
     // MARK: - Services
 
     var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
@@ -75,6 +80,16 @@ extension Container {
                 },
                 disconnectKlineStream: {
                     candlestickService.disconnect()
+                }
+            )
+        }
+    }
+
+    var exchangeRateClient: Factory<ExchangeRateClient> {
+        self {
+            ExchangeRateClient(
+                fetchUSDtoKRW: {
+                    try await self.exchangeRateRepository().fetchUSDtoKRW()
                 }
             )
         }

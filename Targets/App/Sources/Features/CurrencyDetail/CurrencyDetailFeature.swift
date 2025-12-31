@@ -10,6 +10,7 @@ import Foundation
 import ComposableArchitecture
 import Entity
 import Domain
+import Infra
 
 @Reducer
 struct CurrencyDetailFeature {
@@ -19,6 +20,10 @@ struct CurrencyDetailFeature {
     struct State: Equatable {
         let symbol: String
         let previousClosePrice: Double?
+
+        // Shared State from Parent
+        var exchangeRate: Double?
+        var selectedCurrency: CurrencyUnit
 
         // Header (live-ish)
         var midPrice: Double?
@@ -42,11 +47,20 @@ struct CurrencyDetailFeature {
         // View
         var isFirstAppear: Bool = true
 
-        init(symbol: String, previousClosePrice: Double?, priceChange24h: Double?, changePercent24h: Double?) {
+        init(
+            symbol: String,
+            previousClosePrice: Double?,
+            priceChange24h: Double?,
+            changePercent24h: Double?,
+            exchangeRate: Double?,
+            selectedCurrency: CurrencyUnit
+        ) {
             self.symbol = symbol
             self.previousClosePrice = previousClosePrice
             self.priceChange24h = priceChange24h
             self.changePercent24h = changePercent24h
+            self.exchangeRate = exchangeRate
+            self.selectedCurrency = selectedCurrency
         }
     }
 
