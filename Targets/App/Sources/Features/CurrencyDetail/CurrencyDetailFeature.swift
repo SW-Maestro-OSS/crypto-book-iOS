@@ -120,6 +120,7 @@ struct CurrencyDetailFeature {
                     .send(.fetchNews),
                     .send(.computeInsight),
                     .run { [symbol = state.symbol] send in
+                        defer { streaming.disconnect() }
                         do {
                             for try await tick in streaming.connect(symbol) {
                                 await send(.tickReceived(tick))
@@ -132,8 +133,7 @@ struct CurrencyDetailFeature {
                 )
 
             case .onDisappear:
-                streaming.disconnect()
-                return .cancel(id: CancelID.detailSocket)
+                return .none
 
             // MARK: Live header updates
             case let .midPriceUpdated(value):

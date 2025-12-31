@@ -38,7 +38,6 @@ struct CurrencyDetailView: View {
                 await store.send(.refreshPulled).finish()
             }
             .onAppear { store.send(.onAppear) }
-            .onDisappear { store.send(.onDisappear) }
         }
     }
 
