@@ -25,7 +25,7 @@ struct CurrencyDetailFeature {
         var lastUpdated: Date?
 
         // Chart (snapshot)
-        var candles: [OHLCV] = []
+        var candles: [Candle] = []
         var chartLoading: Bool = false
         var chartError: String?
 
@@ -59,7 +59,7 @@ struct CurrencyDetailFeature {
 
         // Chart
         case fetchChart
-        case chartResponse(Result<[OHLCV], ChartError>)
+        case chartResponse(Result<[Candle], ChartError>)
 
         // News
         case fetchNews
@@ -236,7 +236,7 @@ struct CurrencyDetailFeature {
 
     static func makePlaceholderInsight(
         symbol: String,
-        candles: [OHLCV],
+        candles: [Candle],
         news: [NewsArticle]
     ) -> Insight {
         var buy = 50

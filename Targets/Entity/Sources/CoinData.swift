@@ -1,16 +1,11 @@
-//
-//  CoinData.swift
-//  CryptoBookApp
-//
-//  Created by 김정원 on 12/11/25.
-//  Copyright © 2025 io.tuist. All rights reserved.
-//
-
 import Foundation
 
+/// Represents basic information about a cryptocurrency coin.
 public struct CoinData {
+    /// The name of the cryptocurrency.
+    public let name: String
+
     public init(name: String) {
         self.name = name
     }
-    public let name: String
 }

@@ -9,7 +9,7 @@
 import Foundation
 import Entity
 
-/// Binance Kline (OHLCV) DTO
+/// Binance Kline (Candle) DTO
 /// Response shape (array):
 /// [
 ///   0 openTime,
@@ -65,9 +65,9 @@ public struct BinanceKlineDTO: Decodable {
 
 extension BinanceKlineDTO {
     
-    public func toDomain() -> OHLCV? {
+    public func toDomain() -> Candle? {
         let data = self.kline
-        
+
         guard
             let open = Double(data.open),
             let high = Double(data.high),
@@ -77,9 +77,9 @@ extension BinanceKlineDTO {
         else {
             return nil
         }
-        
-        return OHLCV(
-            openTimeMs: data.startTime, // DTO의 't' 필드 매핑
+
+        return Candle(
+            openTimeMs: data.startTime,
             open: open,
             high: high,
             low: low,

@@ -44,7 +44,6 @@ let project = Project(
             product: .unitTests,
             bundleId: "\(organizationName).\(projectName)AppTests",
             deploymentTargets: .iOS("16.0"),
-            infoPlist: .default,
             sources: ["Targets/App/Tests/**"],
             dependencies: [
                 .target(name: "CryptoBookApp")
@@ -66,7 +65,6 @@ let project = Project(
             product: .framework,
             bundleId: "\(organizationName).Domain",
             deploymentTargets: .iOS("16.0"),
-            infoPlist: .default,
             sources: ["Targets/Domain/Sources/**"],
             dependencies: [
                 .target(name: "Entity")
@@ -79,7 +77,6 @@ let project = Project(
             product: .framework,
             bundleId: "\(organizationName).Data",
             deploymentTargets: .iOS("16.0"),
-            infoPlist: .default,
             sources: ["Targets/Data/Sources/**"],
             dependencies: [
                 .target(name: "Domain"),

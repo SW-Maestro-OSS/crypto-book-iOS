@@ -12,7 +12,7 @@ import Factory
 import Entity
 
 struct BinanceAPIClient {
-    var fetchKlines: @Sendable (_ symbol: String, _ interval: String, _ limit: Int) async throws -> [OHLCV]
+    var fetchKlines: @Sendable (_ symbol: String, _ interval: String, _ limit: Int) async throws -> [Candle]
 }
 
 // MARK: - DependencyKey

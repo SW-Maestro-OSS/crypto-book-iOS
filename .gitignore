@@ -69,5 +69,4 @@ Derived/
 ### Tuist managed dependencies ###
 Tuist/.build
 
-# Gemini
-GEMINI.md
+

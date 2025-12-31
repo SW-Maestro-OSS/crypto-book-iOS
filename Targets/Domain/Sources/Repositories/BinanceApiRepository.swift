@@ -10,5 +10,5 @@ import Foundation
 import Entity
 
 public protocol BinanceApiRepository {
-    func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [OHLCV]
+    func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [Candle]
 }

@@ -21,7 +21,7 @@ public final class BinanceApiRepositoryImpl: BinanceApiRepository {
         self.remoteDataSource = remoteDataSource
     }
 
-    public func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [OHLCV] {
+    public func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [Candle] {
         let dtos = try await remoteDataSource.fetchKlines(
             symbol: symbol,
             interval: interval,

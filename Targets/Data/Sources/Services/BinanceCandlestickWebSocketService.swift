@@ -18,17 +18,16 @@ final class BinanceCandlestickStreamingWebSocketService {
         self.session = session
     }
     
-    public func connect(symbol: String, interval: String) -> AsyncThrowingStream<[OHLCV], Error> {
-        // 바이낸스 웹소켓 URL 구조: wss://fstream.binance.com/ws/<symbol>@kline_<interval>
+    public func connect(symbol: String, interval: String) -> AsyncThrowingStream<[Candle], Error> {
         let urlString = "wss://fstream.binance.com/ws/\(symbol.lowercased())@kline_\(interval)"
         guard let url = URL(string: urlString) else {
             return AsyncThrowingStream { $0.finish(throwing: URLError(.badURL)) }
         }
-        
+
         let webSocket = session.webSocketTask(with: url)
         self.webSocket = webSocket
         webSocket.resume()
-        
+
         return AsyncThrowingStream { continuation in
             func receiveMessage() {
                 webSocket.receive { [weak self] result in
@@ -40,9 +39,12 @@ final class BinanceCandlestickStreamingWebSocketService {
                                 do {
                                     let decoder = JSONDecoder()
                                     let dto = try decoder.decode([BinanceKlineDTO].self, from: data)
-                                    continuation.yield(dto.map{$0.toDomain() ?? OHLCV(openTimeMs: 0, open: 0, high: 0, low: 0, close: 0, volume: 0)})
+                                    let candles = dto.compactMap { $0.toDomain() }
+                                    if !candles.isEmpty {
+                                        continuation.yield(candles)
+                                    }
                                 } catch {
-                                    // 디코딩 에러 처리
+                                    // Decoding error - skip this message
                                 }
                             }
                         default:
@@ -54,9 +56,9 @@ final class BinanceCandlestickStreamingWebSocketService {
                     }
                 }
             }
-            
+
             receiveMessage()
-            
+
             continuation.onTermination = { [weak self] _ in
                 self?.disconnect()
             }

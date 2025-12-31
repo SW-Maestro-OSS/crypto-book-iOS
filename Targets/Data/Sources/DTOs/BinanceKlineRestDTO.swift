@@ -27,12 +27,12 @@ struct BinanceKlineRestDTO: Decodable {
         self.volume = try container.decode(String.self)
     }
 
-    func toDomain() -> OHLCV? {
+    func toDomain() -> Candle? {
         guard let o = Double(open), let h = Double(high),
               let l = Double(low), let c = Double(close),
               let v = Double(volume) else { return nil }
-        
-        return OHLCV(
+
+        return Candle(
             openTimeMs: openTime,
             open: o, high: h, low: l, close: c, volume: v
         )
