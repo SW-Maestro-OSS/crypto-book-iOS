@@ -1,290 +1,156 @@
-# TCA Presentation Race Condition 해결
+# 실시간 가격 DTO 파싱 오류 수정
 
-`DetailView`가 닫힐 때 발생하는 런타임 크래시는, SwiftUI 뷰의 `.onDisappear` 생명주기와 TCA의 상태 업데이트 간의 경합(Race Condition) 때문에 발생합니다.
+`CurrencyDetailView` 진입 시 실시간 가격 데이터를 DTO로 변환하는 과정의 오류를 해결합니다.
 
-이 문제를 해결하기 위해, 예측 불가능한 `.onDisappear` 시점에 의존하여 수동으로 리소스를 정리하는 대신, TCA의 구조화된 동시성(Structured Concurrency)을 활용하여 이펙트의 생명주기에 정리 로직을 통합합니다.
+**문제 원인:**
+`BinanceCurrencyDetailWebSocketService`의 `parseTick` 함수가 `try?`를 사용하여 디코딩 오류를 조용히 무시하고 있었습니다. 이로 인해 바이낸스 API로부터 받은 `bookTicker` 메시지 파싱에 실패하더라도 원인을 알 수 없었고, 가격 정보가 DTO에 담겨 뷰까지 전달되지 않았습니다.
+
+**해결책:**
+`parseTick` 함수를 보다 안정적인 방식으로 재작성하여 이 문제를 해결합니다.
+
+1.  먼저 JSON 데이터를 범용 딕셔너리로 파싱하여 `stream` 필드를 통해 데이터의 종류를 안전하게 확인합니다.
+2.  `stream` 이름에 따라(`@bookTicker` 또는 `@ticker`) 해당하는 특정 DTO로만 디코딩을 시도합니다.
+3.  `try?` 대신 `try`를 사용하여, 디코딩 실패 시 에러가 발생하도록 변경합니다. 이를 통해 문제가 발생했을 때 원인을 명확하게 인지할 수 있습니다.
+
+이러한 변경으로 데이터 파싱 과정의 안정성을 확보하여, 실시간 가격이 DTO에 올바르게 담겨 화면에 표시되도록 합니다.
 
 ## 파일 내용 변경
 
-### `Targets/App/Sources/Features/CurrencyDetail/CurrencyDetailFeature.swift`
-
-1.  **`.onDisappear` 로직 제거**: `.onDisappear` 케이스에서 수동으로 이펙트를 취소하고 스트림 연결을 해제하는 코드를 삭제합니다. 이로써 경합 상태의 직접적인 원인을 제거합니다.
-2.  **`.onAppear` 이펙트 수정**: `.run` 이펙트 내부에 `defer` 구문을 추가합니다. 이펙트가 시작될 때 `streaming.connect()`를 호출하고, 이펙트가 취소될 때(화면이 닫혀서 TCA가 자동으로 이펙트를 취소시킬 때) `defer` 블록이 실행되어 `streaming.disconnect()`를 호출하도록 보장합니다.
+### `Targets/Data/Sources/Services/BinanceCurrencyDetailWebSocketService.swift`
 
 ```swift
 //
-//  CurrencyDetailFeature.swift
-//  CryptoBookApp
+//  BinanceCurrencyDetailWebSocketService.swift
+//  Data
 //
 //  Created by 김정원 on 12/18/25.
-//  Copyright © 2025 io.tuist. All rights reserved.
 //
 
 import Foundation
-import ComposableArchitecture
-import Entity
 import Domain
+/// 특정 암호화폐의 상세정보를 실시간으로 받아옴
+final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSource, @unchecked Sendable {
 
-@Reducer
-struct CurrencyDetailFeature {
+    private let session: URLSession
+    private var webSocketTask: URLSessionWebSocketTask?
 
-    // MARK: - State
-    @ObservableState
-    struct State: Equatable {
-        let symbol: String
-
-        // Header (live-ish)
-        var midPrice: Double?
-        var changePercent24h: Double?
-        var lastUpdated: Date?
-
-        // Chart (snapshot)
-        var candles: [Candle] = []
-        var chartLoading: Bool = false
-        var chartError: String?
-
-        // AI Insight (placeholder)
-        var insight: Insight?
-        var insightLoading: Bool = false
-
-        // News
-        var news: [NewsArticle] = []
-        var newsLoading: Bool = false
-        var newsError: String?
-
-        // View
-        var isFirstAppear: Bool = true
-
-        init(symbol: String) {
-            self.symbol = symbol
-        }
+    init(session: URLSession = .shared) {
+        self.session = session
     }
 
-    // MARK: - Action
+    /// Connects to Binance WS for a single symbol and emits `CurrencyDetailTick`.
+    func connect(symbol: String) -> AsyncThrowingStream<CurrencyDetailTick, Error> {
+        let lower = symbol.lowercased()
 
-    enum Action: Equatable {
-        case onAppear
-        case onDisappear
+        // bookTicker (mid price) + 24hr ticker (change percent)
+        let streams = "\(lower)@bookTicker/\(lower)@ticker"
+        let urlString = "wss://stream.binance.com:9443/stream?streams=\(streams)"
+        let url = URL(string: urlString)!
 
-        // Header live updates (from WS)
-        case midPriceUpdated(Double)
-        case changePercent24hUpdated(Double)
-        case tickReceived(CurrencyDetailTick)
+        // Cancel any existing connection (screen re-appear)
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
 
-        // Chart
-        case fetchChart
-        case chartResponse(Result<[Candle], ChartError>)
+        let task = session.webSocketTask(with: url)
+        self.webSocketTask = task
+        task.resume()
 
-        // News
-        case fetchNews
-        case newsResponse(Result<[NewsArticle], NewsError>)
+        return AsyncThrowingStream { [weak self] continuation in
+            guard let self else {
+                continuation.finish()
+                return
+            }
 
-        // Insight
-        case computeInsight
-        case insightComputed(Insight)
+            func receiveNext() {
+                task.receive { result in
+                    switch result {
+                    case .failure(let error):
+                        continuation.finish(throwing: error)
 
-        // UI
-        case refreshPulled
-        case newsItemTapped(NewsArticle)
-    }
-
-    // MARK: - Errors
-
-    enum ChartError: Error, Equatable {
-        case network(String)
-    }
-
-    enum NewsError: Error, Equatable {
-        case network(String)
-    }
-
-    enum CancelID {
-        case detailSocket
-    }
-
-    // MARK: - Models
-
-    struct Insight: Equatable {
-        let buyPercent: Int
-        let sellPercent: Int
-        let bullets: [String]
-
-        init(buyPercent: Int, sellPercent: Int, bullets: [String]) {
-            self.buyPercent = buyPercent
-            self.sellPercent = sellPercent
-            self.bullets = bullets
-        }
-    }
-
-    // MARK: - Reducer
-    @Dependency(\.currencyDetailStreaming) var streaming
-
-    init() {}
-
-    var body: some ReducerOf<Self> {
-        Reduce { state, action in
-            switch action {
-            case .onAppear:
-                guard state.isFirstAppear else { return .none }
-                state.isFirstAppear = false
-
-                // Kick off snapshot fetches.
-                return .merge(
-                    .send(.fetchChart),
-                    .send(.fetchNews),
-                    .send(.computeInsight),
-                    .run { [symbol = state.symbol] send in
-                        defer {
-                            // This block is guaranteed to run when the effect is cancelled.
-                            streaming.disconnect()
-                        }
+                    case .success(let message):
                         do {
-                            for try await tick in streaming.connect(symbol) {
-                                await send(.tickReceived(tick))
+                            let data: Data
+                            switch message {
+                            case .data(let d): data = d
+                            case .string(let s): data = Data(s.utf8)
+                            @unknown default:
+                                receiveNext()
+                                return
                             }
+
+                            if let tick = try self.parseTick(from: data) {
+                                continuation.yield(tick)
+                            }
+                            receiveNext()
                         } catch {
-                            // Swallow streaming errors for now; UI can stay on last known values.
+                            // If parsing fails, terminate the stream to make the error visible.
+                            continuation.finish(throwing: error)
                         }
                     }
-                    .cancellable(id: CancelID.detailSocket, cancelInFlight: true)
-                )
-
-            case .onDisappear:
-                // The cleanup logic has been moved to the .onAppear effect's lifecycle.
-                // This action is no longer needed to prevent race conditions.
-                return .none
-
-            // MARK: Live header updates
-            case let .midPriceUpdated(value):
-                state.midPrice = value
-                state.lastUpdated = Date()
-                return .none
-
-            case let .changePercent24hUpdated(value):
-                state.changePercent24h = value
-                state.lastUpdated = Date()
-                return .none
-
-            case let .tickReceived(tick):
-                if let mid = tick.midPrice {
-                    state.midPrice = mid
                 }
-                if let change = tick.changePercent24h {
-                    state.changePercent24h = change
-                }
-                state.lastUpdated = Date()
-                return .none
+            }
 
-            // MARK: Chart
-            case .fetchChart:
-                state.chartLoading = true
-                state.chartError = nil
+            receiveNext()
 
-                // TODO: Replace with real REST call (e.g. /api/v3/uiKlines interval=1d limit=7)
-                // For now, return empty to keep structure.
-                return .send(.chartResponse(.success([])))
-
-            case let .chartResponse(.success(candles)):
-                state.chartLoading = false
-                state.candles = candles
-                return .send(.computeInsight)
-
-            case let .chartResponse(.failure(error)):
-                state.chartLoading = false
-                state.chartError = {
-                    switch error {
-                    case let .network(message): return message
-                    }
-                }()
-                return .none
-
-            // MARK: News
-            case .fetchNews:
-                state.newsLoading = true
-                state.newsError = nil
-
-                // TODO: Replace with real CryptoPanic fetch
-                return .send(.newsResponse(.success([])))
-
-            case let .newsResponse(.success(items)):
-                state.newsLoading = false
-                state.news = items
-                return .send(.computeInsight)
-
-            case let .newsResponse(.failure(error)):
-                state.newsLoading = false
-                state.newsError = {
-                    switch error {
-                    case let .network(message): return message
-                    }
-                }()
-                return .none
-
-            // MARK: Insight
-            case .computeInsight:
-                // Very small rule-based placeholder:
-                state.insightLoading = true
-
-                let insight = Self.makePlaceholderInsight(
-                    symbol: state.symbol,
-                    candles: state.candles,
-                    news: state.news
-                )
-                return .send(.insightComputed(insight))
-
-            case let .insightComputed(insight):
-                state.insightLoading = false
-                state.insight = insight
-                return .none
-
-            // MARK: UI
-            case .refreshPulled:
-                return .merge(
-                    .send(.fetchChart),
-                    .send(.fetchNews)
-                )
-
-            case .newsItemTapped:
-                // The View should handle opening the URL (system browser).
-                return .none
+            continuation.onTermination = { [weak self] _ in
+                self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
+                self?.webSocketTask = nil
             }
         }
     }
 
-    // MARK: - Helpers
+    func disconnect() {
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        webSocketTask = nil
+    }
+}
 
-    static func makePlaceholderInsight(
-        symbol: String,
-        candles: [Candle],
-        news: [NewsArticle]
-    ) -> Insight {
-        var buy = 50
-        var sell = 50
+// MARK: - Parsing
+private extension BinanceCurrencyDetailWebSocketService {
 
-        if let first = candles.first, let last = candles.last {
-            if last.close > first.open {
-                buy = 70
-                sell = 30
-            } else if last.close < first.open {
-                buy = 30
-                sell = 70
-            }
+    struct StreamEnvelope<T: Decodable>: Decodable {
+        let stream: String
+        let data: T
+    }
+
+    struct BookTickerDTO: Decodable {
+        let s: String      // symbol
+        let b: String      // best bid price
+        let a: String      // best ask price
+    }
+
+    struct Ticker24hDTO: Decodable {
+        let s: String      // symbol
+        let P: String      // price change percent
+    }
+
+    func parseTick(from data: Data) throws -> CurrencyDetailTick? {
+        // First, decode into a generic dictionary to inspect the stream name safely.
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let streamName = json["stream"] as? String,
+              let jsonData = json["data"] as? [String: Any] else {
+            // Not the format we expect (envelope with stream/data), so ignore.
+            return nil
         }
 
-        var bullets: [String] = []
-        bullets.append("현재 \(symbol)의 추세를 기반으로 한 간단 분석입니다.")
+        // Re-serialize the inner 'data' object to decode it with a specific DTO.
+        let innerData = try JSONSerialization.data(withJSONObject: jsonData)
 
-        if !candles.isEmpty {
-            bullets.append("최근 7일(1D) 캔들 흐름을 반영했습니다.")
+        if streamName.hasSuffix("@bookTicker") {
+            let ticker = try JSONDecoder().decode(BookTickerDTO.self, from: innerData)
+            let bid = Double(ticker.b)
+            let ask = Double(ticker.a)
+            let mid = (bid != nil && ask != nil) ? ((bid! + ask!) / 2.0) : nil
+            return CurrencyDetailTick(symbol: ticker.s, midPrice: mid, changePercent24h: nil)
         }
 
-        if !news.isEmpty {
-            bullets.append("관련 뉴스 신호를 함께 고려했습니다.")
-        } else {
-            bullets.append("현재는 뉴스 데이터가 없어 차트 중심으로 판단합니다.")
+        if streamName.hasSuffix("@ticker") {
+            let ticker = try JSONDecoder().decode(Ticker24hDTO.self, from: innerData)
+            let change = Double(ticker.P)
+            return CurrencyDetailTick(symbol: ticker.s, midPrice: nil, changePercent24h: change)
         }
 
-        return Insight(buyPercent: buy, sellPercent: sell, bullets: bullets)
+        // The stream name is not one we handle.
+        return nil
     }
 }
 ```

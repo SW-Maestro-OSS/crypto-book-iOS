@@ -102,30 +102,32 @@ private extension BinanceCurrencyDetailWebSocketService {
     }
 
     func parseTick(from data: Data) throws -> CurrencyDetailTick? {
-        // Try bookTicker first
-        if let envelope = try? JSONDecoder().decode(StreamEnvelope<BookTickerDTO>.self, from: data) {
-            let bid = Double(envelope.data.b)
-            let ask = Double(envelope.data.a)
+        // First, decode into a generic dictionary to inspect the stream name safely.
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let streamName = json["stream"] as? String,
+              let jsonData = json["data"] as? [String: Any] else {
+            // Not the format we expect (envelope with stream/data), so ignore.
+            return nil
+        }
+
+        // Re-serialize the inner 'data' object to decode it with a specific DTO.
+        let innerData = try JSONSerialization.data(withJSONObject: jsonData)
+
+        if streamName.hasSuffix("@bookTicker") {
+            let ticker = try JSONDecoder().decode(BookTickerDTO.self, from: innerData)
+            let bid = Double(ticker.b)
+            let ask = Double(ticker.a)
             let mid = (bid != nil && ask != nil) ? ((bid! + ask!) / 2.0) : nil
-
-            return CurrencyDetailTick(
-                symbol: envelope.data.s,
-                midPrice: mid,
-                changePercent24h: nil
-            )
+            return CurrencyDetailTick(symbol: ticker.s, midPrice: mid, changePercent24h: nil)
         }
 
-        // Then try 24h ticker
-        if let envelope = try? JSONDecoder().decode(StreamEnvelope<Ticker24hDTO>.self, from: data) {
-            let change = Double(envelope.data.P)
-
-            return CurrencyDetailTick(
-                symbol: envelope.data.s,
-                midPrice: nil,
-                changePercent24h: change
-            )
+        if streamName.hasSuffix("@ticker") {
+            let ticker = try JSONDecoder().decode(Ticker24hDTO.self, from: innerData)
+            let change = Double(ticker.P)
+            return CurrencyDetailTick(symbol: ticker.s, midPrice: nil, changePercent24h: change)
         }
 
+        // The stream name is not one we handle.
         return nil
     }
 }
