@@ -6,10 +6,10 @@ struct CandlestickChart: View {
     let candles: [Candle]
 
     var body: some View {
-        Chart(candles) { candle in
+        Chart(Array(candles.enumerated()), id: \.element.id) { index, candle in
             // Wick (심지): high ~ low
             RuleMark(
-                x: .value("Date", candleDate(candle)),
+                x: .value("Index", dayLabel(candle)),
                 yStart: .value("Low", candle.low),
                 yEnd: .value("High", candle.high)
             )
@@ -18,17 +18,17 @@ struct CandlestickChart: View {
 
             // Body (몸통): open ~ close
             RectangleMark(
-                x: .value("Date", candleDate(candle)),
+                x: .value("Index", dayLabel(candle)),
                 yStart: .value("Open", candle.open),
                 yEnd: .value("Close", candle.close),
-                width: .fixed(12)
+                width: .fixed(16)
             )
             .foregroundStyle(candleColor(candle))
         }
         .chartXAxis {
-            AxisMarks(values: .stride(by: .day)) { value in
+            AxisMarks { value in
                 AxisGridLine()
-                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                AxisValueLabel()
             }
         }
         .chartYAxis {
@@ -42,8 +42,11 @@ struct CandlestickChart: View {
 
     // MARK: - Helpers
 
-    private func candleDate(_ candle: Candle) -> Date {
-        Date(timeIntervalSince1970: TimeInterval(candle.openTimeMs) / 1000)
+    private func dayLabel(_ candle: Candle) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(candle.openTimeMs) / 1000)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d"
+        return formatter.string(from: date)
     }
 
     private func candleColor(_ candle: Candle) -> Color {
@@ -56,7 +59,6 @@ struct CandlestickChart: View {
         let minLow = candles.map(\.low).min() ?? 0
         let maxHigh = candles.map(\.high).max() ?? 1
 
-        // Add 5% padding
         let padding = (maxHigh - minLow) * 0.05
         return (minLow - padding)...(maxHigh + padding)
     }
