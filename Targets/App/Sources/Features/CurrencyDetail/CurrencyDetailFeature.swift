@@ -58,7 +58,7 @@ struct CurrencyDetailFeature {
         case tickReceived(CurrencyDetailTick)
         case fetchChart
         case chartResponse(Result<[Candle], ChartError>)
-        case candleUpdated(Result<Candle, Error>)
+        case candleUpdated(Candle)
         case fetchNews
         case newsResponse(Result<[NewsArticle], NewsError>)
         case computeInsight
@@ -99,8 +99,6 @@ struct CurrencyDetailFeature {
     @Dependency(\.currencyDetailStreaming) var streaming
     @Dependency(\.binanceAPIClient) var binanceAPIClient
 
-    init() {}
-
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
@@ -127,17 +125,6 @@ struct CurrencyDetailFeature {
                 )
 
             case .onDisappear:
-                return .none
-
-            // MARK: Live header updates
-            case let .midPriceUpdated(value):
-                state.midPrice = value
-                state.lastUpdated = Date()
-                return .none
-
-            case let .changePercent24hUpdated(value):
-                state.changePercent24h = value
-                state.lastUpdated = Date()
                 return .none
 
             case let .tickReceived(tick):
@@ -195,7 +182,6 @@ struct CurrencyDetailFeature {
                 return .none
 
             case let .candleUpdated(candle):
-                print("🕯️ Candle Updated: \(candle)")
                 guard !state.candles.isEmpty else { return .none }
 
                 let calendar = Calendar.current
