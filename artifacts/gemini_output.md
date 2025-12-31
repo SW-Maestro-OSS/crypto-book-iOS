@@ -1,156 +1,252 @@
-# 실시간 가격 DTO 파싱 오류 수정
+# 캔들 차트 시각화 구현
 
-`CurrencyDetailView` 진입 시 실시간 가격 데이터를 DTO로 변환하는 과정의 오류를 해결합니다.
+`CurrencyDetailView`에 표시되는 차트 데이터를 실제 캔들 차트 형태로 시각화합니다. 이를 위해 캔들 차트를 그리는 `CandleChartView`를 새로 생성하고, 기존의 임시 UI(Placeholder)를 교체합니다.
 
-**문제 원인:**
-`BinanceCurrencyDetailWebSocketService`의 `parseTick` 함수가 `try?`를 사용하여 디코딩 오류를 조용히 무시하고 있었습니다. 이로 인해 바이낸스 API로부터 받은 `bookTicker` 메시지 파싱에 실패하더라도 원인을 알 수 없었고, 가격 정보가 DTO에 담겨 뷰까지 전달되지 않았습니다.
+## 신규 파일 생성
 
-**해결책:**
-`parseTick` 함수를 보다 안정적인 방식으로 재작성하여 이 문제를 해결합니다.
+### `Targets/App/Sources/Features/CurrencyDetail/CandleChartView.swift`
 
-1.  먼저 JSON 데이터를 범용 딕셔너리로 파싱하여 `stream` 필드를 통해 데이터의 종류를 안전하게 확인합니다.
-2.  `stream` 이름에 따라(`@bookTicker` 또는 `@ticker`) 해당하는 특정 DTO로만 디코딩을 시도합니다.
-3.  `try?` 대신 `try`를 사용하여, 디코딩 실패 시 에러가 발생하도록 변경합니다. 이를 통해 문제가 발생했을 때 원인을 명확하게 인지할 수 있습니다.
+불러온 `[Candle]` 데이터를 받아 간단한 막대 차트 형태로 그려주는 SwiftUI 뷰를 새로 생성합니다.
 
-이러한 변경으로 데이터 파싱 과정의 안정성을 확보하여, 실시간 가격이 DTO에 올바르게 담겨 화면에 표시되도록 합니다.
-
-## 파일 내용 변경
-
-### `Targets/Data/Sources/Services/BinanceCurrencyDetailWebSocketService.swift`
+- `Canvas`를 사용하여 각 캔들의 고가/저가(꼬리)와 시가/종가(몸통)를 그립니다.
+- 상승(종가 >= 시가)은 녹색, 하락은 빨간색으로 표시합니다.
+- 전달된 캔들들의 가격 범위를 기준으로 각 캔들의 높이와 위치를 정규화하여 표시합니다.
 
 ```swift
-//
-//  BinanceCurrencyDetailWebSocketService.swift
-//  Data
-//
-//  Created by 김정원 on 12/18/25.
-//
+import SwiftUI
+import Entity
 
-import Foundation
-import Domain
-/// 특정 암호화폐의 상세정보를 실시간으로 받아옴
-final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSource, @unchecked Sendable {
+struct CandleChartView: View {
+    let candles: [Candle]
 
-    private let session: URLSession
-    private var webSocketTask: URLSessionWebSocketTask?
-
-    init(session: URLSession = .shared) {
-        self.session = session
+    private var priceRange: ClosedRange<Double> {
+        let minPrice = candles.map(\.low).min() ?? 0
+        let maxPrice = candles.map(\.high).max() ?? 1
+        // 차트의 상하단에 약간의 여백을 줍니다.
+        let padding = (maxPrice - minPrice) * 0.1
+        return (minPrice - padding)...(maxPrice + padding)
     }
 
-    /// Connects to Binance WS for a single symbol and emits `CurrencyDetailTick`.
-    func connect(symbol: String) -> AsyncThrowingStream<CurrencyDetailTick, Error> {
-        let lower = symbol.lowercased()
-
-        // bookTicker (mid price) + 24hr ticker (change percent)
-        let streams = "\(lower)@bookTicker/\(lower)@ticker"
-        let urlString = "wss://stream.binance.com:9443/stream?streams=\(streams)"
-        let url = URL(string: urlString)!
-
-        // Cancel any existing connection (screen re-appear)
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
-
-        let task = session.webSocketTask(with: url)
-        self.webSocketTask = task
-        task.resume()
-
-        return AsyncThrowingStream { [weak self] continuation in
-            guard let self else {
-                continuation.finish()
-                return
-            }
-
-            func receiveNext() {
-                task.receive { result in
-                    switch result {
-                    case .failure(let error):
-                        continuation.finish(throwing: error)
-
-                    case .success(let message):
-                        do {
-                            let data: Data
-                            switch message {
-                            case .data(let d): data = d
-                            case .string(let s): data = Data(s.utf8)
-                            @unknown default:
-                                receiveNext()
-                                return
-                            }
-
-                            if let tick = try self.parseTick(from: data) {
-                                continuation.yield(tick)
-                            }
-                            receiveNext()
-                        } catch {
-                            // If parsing fails, terminate the stream to make the error visible.
-                            continuation.finish(throwing: error)
-                        }
-                    }
-                }
-            }
-
-            receiveNext()
-
-            continuation.onTermination = { [weak self] _ in
-                self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
-                self?.webSocketTask = nil
+    var body: some View {
+        HStack(alignment: .center, spacing: 4) {
+            ForEach(Array(candles.enumerated()), id: \.offset) { _, candle in
+                CandleBarView(candle: candle, priceRange: priceRange)
             }
         }
-    }
-
-    func disconnect() {
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
-        webSocketTask = nil
+        .frame(height: 150)
+        .drawingGroup() // 복잡한 뷰 계층을 단일 레이어로 렌더링하여 성능을 향상시킵니다.
     }
 }
 
-// MARK: - Parsing
-private extension BinanceCurrencyDetailWebSocketService {
+struct CandleBarView: View {
+    let candle: Candle
+    let priceRange: ClosedRange<Double>
 
-    struct StreamEnvelope<T: Decodable>: Decodable {
-        let stream: String
-        let data: T
-    }
-
-    struct BookTickerDTO: Decodable {
-        let s: String      // symbol
-        let b: String      // best bid price
-        let a: String      // best ask price
-    }
-
-    struct Ticker24hDTO: Decodable {
-        let s: String      // symbol
-        let P: String      // price change percent
-    }
-
-    func parseTick(from data: Data) throws -> CurrencyDetailTick? {
-        // First, decode into a generic dictionary to inspect the stream name safely.
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let streamName = json["stream"] as? String,
-              let jsonData = json["data"] as? [String: Any] else {
-            // Not the format we expect (envelope with stream/data), so ignore.
-            return nil
+    var body: some View {
+        let isUp = candle.close >= candle.open
+        let color = isUp ? Color.green : Color.red
+        
+        let range = priceRange.upperBound - priceRange.lowerBound
+        guard range > 0 else {
+            // 가격 변동이 없는 경우 아무것도 그리지 않습니다.
+            return AnyView(EmptyView())
         }
 
-        // Re-serialize the inner 'data' object to decode it with a specific DTO.
-        let innerData = try JSONSerialization.data(withJSONObject: jsonData)
+        // 캔들의 각 가격을 0(상단) ~ 1(하단) 사이의 상대적인 Y좌표로 변환합니다.
+        let yHigh = 1 - ((candle.high - priceRange.lowerBound) / range)
+        let yLow = 1 - ((candle.low - priceRange.lowerBound) / range)
+        
+        let yOpen = 1 - ((candle.open - priceRange.lowerBound) / range)
+        let yClose = 1 - ((candle.close - priceRange.lowerBound) / range)
 
-        if streamName.hasSuffix("@bookTicker") {
-            let ticker = try JSONDecoder().decode(BookTickerDTO.self, from: innerData)
-            let bid = Double(ticker.b)
-            let ask = Double(ticker.a)
-            let mid = (bid != nil && ask != nil) ? ((bid! + ask!) / 2.0) : nil
-            return CurrencyDetailTick(symbol: ticker.s, midPrice: mid, changePercent24h: nil)
-        }
+        return AnyView(
+            Canvas { context, size in
+                // 꼬리 (Wick)
+                let wickPath = Path { p in
+                    p.move(to: CGPoint(x: size.width / 2, y: size.height * yHigh))
+                    p.addLine(to: CGPoint(x: size.width / 2, y: size.height * yLow))
+                }
+                context.stroke(wickPath, with: .color(color), lineWidth: 1)
 
-        if streamName.hasSuffix("@ticker") {
-            let ticker = try JSONDecoder().decode(Ticker24hDTO.self, from: innerData)
-            let change = Double(ticker.P)
-            return CurrencyDetailTick(symbol: ticker.s, midPrice: nil, changePercent24h: change)
-        }
-
-        // The stream name is not one we handle.
-        return nil
+                // 몸통 (Body)
+                let bodyHeight = size.height * abs(yOpen - yClose)
+                let bodyRect = CGRect(
+                    x: size.width / 2 - 3,
+                    y: size.height * min(yOpen, yClose),
+                    width: 6,
+                    height: bodyHeight > 1 ? bodyHeight : 1 // 최소 높이를 1로 보장
+                )
+                context.fill(Path(bodyRect), with: .color(color))
+            }
+        )
     }
+}
+```
+
+## 파일 내용 변경
+
+### `Targets/App/Sources/Features/CurrencyDetail/CurrencyDetailView.swift`
+
+기존 `chartSection`의 임시 UI를 새로 만든 `CandleChartView`로 교체합니다.
+
+```swift
+import SwiftUI
+import ComposableArchitecture
+import Entity
+import Infra // CachedAsyncImage 사용을 위함
+
+struct CurrencyDetailView: View {
+    @Perception.Bindable var store: StoreOf<CurrencyDetailFeature>
+    @Environment(\.openURL) var openURL // 뉴스 URL을 열기 위함
+
+    var body: some View {
+        WithPerceptionTracking {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // 1. Header Section: 실시간 가격 및 등락률
+                    headerSection(
+                        midPrice: store.midPrice,
+                        changePercent24h: store.changePercent24h,
+                        lastUpdated: store.lastUpdated
+                    )
+                    
+                    Divider()
+
+                    // 2. Chart Section: 7일 캔들 차트
+                    chartSection
+                    
+                    Divider()
+
+                    // 3. AI Insight Section: 매수/매도 심리 및 분석 요약
+                    aiInsightSection
+                    
+                    Divider()
+
+                    // 4. News Section: 관련 종목 뉴스 및 아티클
+                   // newsSection
+                }
+                .padding()
+            }
+            .navigationTitle(store.symbol)
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable {
+                // 당겨서 새로고침
+                await store.send(.refreshPulled).finish()
+            }
+            .onAppear { store.send(.onAppear) }
+        }
+    }
+
+    // MARK: - Subviews
+
+    private func headerSection(
+        midPrice: Double?,
+        changePercent24h: Double?,
+        lastUpdated: Date?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .bottom) {
+                if let midPrice {
+                    Text(String(format: "%.4f", midPrice))
+                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                } else {
+                    Text("---")
+                        .font(.system(size: 32, weight: .bold))
+                }
+                
+                Text("USDT")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 6)
+            }
+
+            if let change = changePercent24h {
+                HStack {
+                    Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
+                    Text(String(format: "%.2f%%", change))
+                    Text("지난 24시간")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.subheadline.bold())
+                .foregroundStyle(change >= 0 ? .green : .red) // 양전 초록, 음전 빨강
+            }
+            
+            if let lastUpdated {
+                Text("최근 업데이트: \(lastUpdated.formatted(date: .omitted, time: .standard))")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private var chartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("7D Chart (1D Interval)")
+                .font(.headline)
+            
+            if store.chartLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 150)
+            } else if store.candles.isEmpty {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(.systemGray6))
+                    .frame(height: 150)
+                    .overlay(Text("차트 데이터를 불러올 수 없습니다.").font(.caption))
+            } else {
+                CandleChartView(candles: store.candles)
+            }
+        }
+    }
+
+    private var aiInsightSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("AI Insight")
+                .font(.headline)
+            
+            if let insight = store.insight {
+                VStack(spacing: 12) {
+                    // 매수/매도 게이지 바
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .fill(.red)
+                            .frame(width: CGFloat(insight.sellPercent) * 2.5, height: 20)
+                            .overlay(Text("매도 \(insight.sellPercent)").font(.caption2).bold().white(), alignment: .leading)
+                        
+                        Rectangle()
+                            .fill(.green)
+                            .frame(width: CGFloat(insight.buyPercent) * 2.5, height: 20)
+                            .overlay(Text("매수 \(insight.buyPercent)").font(.caption2).bold().white(), alignment: .trailing)
+                    }
+                    .clipShape(Capsule())
+                    .frame(maxWidth: .infinity)
+                    
+                    // 인사이트 요약 불렛 포인트
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(insight.bullets, id: \.self) { bullet in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                Text(bullet)
+                                    .font(.subheadline)
+                                    .lineLimit(nil)
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+            } else if store.insightLoading {
+                ProgressView("분석 중...")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+}
+
+// 텍스트 색상 편의를 위한 확장
+extension View {
+    func white() -> some View { self.foregroundStyle(.white) }
 }
 ```

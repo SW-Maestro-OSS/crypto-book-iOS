@@ -7,8 +7,8 @@ protocol CandlestickRemoteDataSource {
     /// - Parameters:
     ///   - symbol: 암호화폐 심볼 (e.g., "BTCUSDT")
     ///   - interval: 캔들 주기 (e.g., "1m", "1d")
-    /// - Returns: `[Candle]` 배열을 방출하는 비동기 스트림
-    func connect(symbol: String, interval: String) -> AsyncThrowingStream<[Candle], Error>
+    /// - Returns: `Candle`을 방출하는 비동기 스트림
+    func connect(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error>
 
     /// 웹소켓 연결을 해제합니다.
     func disconnect()

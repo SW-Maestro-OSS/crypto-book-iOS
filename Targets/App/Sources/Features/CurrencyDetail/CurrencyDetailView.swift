@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 import ComposableArchitecture
 import Entity
 import Infra // CachedAsyncImage 사용을 위함
@@ -84,24 +85,18 @@ struct CurrencyDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("7D Chart (1D Interval)")
                 .font(.headline)
-            
+
             if store.chartLoading {
                 ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 150)
+                    .frame(maxWidth: .infinity, minHeight: 200)
             } else if store.candles.isEmpty {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(.systemGray6))
-                    .frame(height: 150)
+                    .frame(height: 200)
                     .overlay(Text("차트 데이터를 불러올 수 없습니다.").font(.caption))
             } else {
-                // 실제 차트 라이브러리 연동 전까지는 캔들 데이터를 이용한 간단한 시각화 영역
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(.systemGray6))
-                    .frame(height: 150)
-                    .overlay(
-                        Text("\(store.candles.count)개의 캔들 데이터 로드됨")
-                            .font(.caption)
-                    )
+                CandlestickChart(candles: store.candles)
+                    .frame(height: 200)
             }
         }
     }

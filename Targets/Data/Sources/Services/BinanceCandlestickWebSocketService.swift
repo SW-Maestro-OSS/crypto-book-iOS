@@ -10,16 +10,16 @@ import Foundation
 import Combine
 import Entity
 /// 특정 암호화폐의 양봉 정보를 실시간으로 받아옴
-final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSource {
+public final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSource {
     private var webSocket: URLSessionWebSocketTask?
     private let session: URLSession
     
-    init(session: URLSession = .shared) {
+    public init(session: URLSession = .shared) {
         self.session = session
     }
     
-    public func connect(symbol: String, interval: String) -> AsyncThrowingStream<[Candle], Error> {
-        let urlString = "wss://fstream.binance.com/ws/\(symbol.lowercased())@kline_\(interval)"
+    public func connect(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error> {
+        let urlString = "wss://stream.binance.com:9443/ws/\(symbol.lowercased())@kline_\(interval)"
         guard let url = URL(string: urlString) else {
             return AsyncThrowingStream { $0.finish(throwing: URLError(.badURL)) }
         }
@@ -38,10 +38,9 @@ final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSo
                             if let data = text.data(using: .utf8) {
                                 do {
                                     let decoder = JSONDecoder()
-                                    let dto = try decoder.decode([BinanceKlineDTO].self, from: data)
-                                    let candles = dto.compactMap { $0.toDomain() }
-                                    if !candles.isEmpty {
-                                        continuation.yield(candles)
+                                    let dto = try decoder.decode(BinanceKlineDTO.self, from: data)
+                                    if let candle = dto.toDomain() {
+                                        continuation.yield(candle)
                                     }
                                 } catch {
                                     // Decoding error - skip this message

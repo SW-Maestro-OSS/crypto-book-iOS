@@ -60,6 +60,7 @@ struct CurrencyDetailFeature {
         // Chart
         case fetchChart
         case chartResponse(Result<[Candle], ChartError>)
+        case candleUpdated(Candle)
 
         // News
         case fetchNews
@@ -86,6 +87,7 @@ struct CurrencyDetailFeature {
 
     enum CancelID {
         case detailSocket
+        case klineSocket
     }
 
     // MARK: - Models
@@ -104,6 +106,7 @@ struct CurrencyDetailFeature {
 
     // MARK: - Reducer
     @Dependency(\.currencyDetailStreaming) var streaming
+    @Dependency(\.binanceAPIClient) var binanceAPIClient
 
     init() {}
 
@@ -160,15 +163,33 @@ struct CurrencyDetailFeature {
             case .fetchChart:
                 state.chartLoading = true
                 state.chartError = nil
-
-                // TODO: Replace with real REST call (e.g. /api/v3/uiKlines interval=1d limit=7)
-                // For now, return empty to keep structure.
-                return .send(.chartResponse(.success([])))
+                return .run { [symbol = state.symbol] send in
+                    do {
+                        let candles = try await binanceAPIClient.fetchKlines(symbol, "1d", 7)
+                        await send(.chartResponse(.success(candles)))
+                    } catch {
+                        await send(.chartResponse(.failure(.network(error.localizedDescription))))
+                    }
+                }
 
             case let .chartResponse(.success(candles)):
                 state.chartLoading = false
                 state.candles = candles
-                return .send(.computeInsight)
+                // Start kline streaming for real-time updates
+                return .merge(
+                    .send(.computeInsight),
+                    .run { [symbol = state.symbol] send in
+                        defer { binanceAPIClient.disconnectKlineStream() }
+                        do {
+                            for try await candle in binanceAPIClient.streamKline(symbol, "1d") {
+                                await send(.candleUpdated(candle))
+                            }
+                        } catch {
+                            // Swallow streaming errors
+                        }
+                    }
+                    .cancellable(id: CancelID.klineSocket, cancelInFlight: true)
+                )
 
             case let .chartResponse(.failure(error)):
                 state.chartLoading = false
@@ -177,6 +198,26 @@ struct CurrencyDetailFeature {
                     case let .network(message): return message
                     }
                 }()
+                return .none
+
+            case let .candleUpdated(candle):
+                // Update or append the latest candle
+                if var existingCandles = Optional(state.candles), !existingCandles.isEmpty {
+                    // Check if this candle matches the last one (same openTimeMs)
+                    if let lastIndex = existingCandles.indices.last,
+                       existingCandles[lastIndex].openTimeMs == candle.openTimeMs {
+                        // Update existing candle
+                        existingCandles[lastIndex] = candle
+                    } else if candle.openTimeMs > (existingCandles.last?.openTimeMs ?? 0) {
+                        // New candle started, append it
+                        existingCandles.append(candle)
+                        // Keep only last 7 candles
+                        if existingCandles.count > 7 {
+                            existingCandles.removeFirst()
+                        }
+                    }
+                    state.candles = existingCandles
+                }
                 return .none
 
             // MARK: News

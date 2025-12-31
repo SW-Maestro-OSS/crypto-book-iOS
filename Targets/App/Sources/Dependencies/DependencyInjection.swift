@@ -55,16 +55,26 @@ extension Container {
         }
     }
     
+    var candlestickStreaming: Factory<BinanceCandlestickStreamingWebSocketService> {
+        self { BinanceCandlestickStreamingWebSocketService() }
+    }
+
     var binanceAPIClient: Factory<BinanceAPIClient> {
         self {
-            BinanceAPIClient(
+            let candlestickService = self.candlestickStreaming()
+            return BinanceAPIClient(
                 fetchKlines: { symbol, interval, limit in
-                    // Container에 등록된 repository를 호출
                     try await self.binanceApiRepository().fetchKlines(
                         symbol: symbol,
                         interval: interval,
                         limit: limit
                     )
+                },
+                streamKline: { symbol, interval in
+                    candlestickService.connect(symbol: symbol, interval: interval)
+                },
+                disconnectKlineStream: {
+                    candlestickService.disconnect()
                 }
             )
         }
