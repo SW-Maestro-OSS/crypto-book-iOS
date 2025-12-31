@@ -7,7 +7,7 @@
 
 import Foundation
 import Domain
-
+/// 특정 암호화폐의 상세정보를 실시간으로 받아옴
 final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSource, @unchecked Sendable {
 
     private let session: URLSession

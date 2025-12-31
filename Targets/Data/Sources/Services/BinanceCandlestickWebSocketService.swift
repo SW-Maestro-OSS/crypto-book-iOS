@@ -9,8 +9,8 @@
 import Foundation
 import Combine
 import Entity
-
-final class BinanceCandlestickStreamingWebSocketService {
+/// 특정 암호화폐의 양봉 정보를 실시간으로 받아옴
+final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSource {
     private var webSocket: URLSessionWebSocketTask?
     private let session: URLSession
     

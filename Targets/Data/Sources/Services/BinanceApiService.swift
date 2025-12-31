@@ -8,7 +8,7 @@
 
 import Foundation
 import Combine
-
+/// 과거 차트의 양봉 데이터를 받아오기 위한 서비스 
 final class BinanceApiService: BinanceApiRemoteDataSource {
     private let session = URLSession.shared
     

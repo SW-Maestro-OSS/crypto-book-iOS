@@ -9,7 +9,7 @@
 import Foundation
 import Entity
 import Domain
-
+/// 모든 암호화폐의 시장가 정보를 실시간으로 받아오는 웹 소켓 서비스
 final class BinanceAllMarketTickersWebSocketService: MarketTickerRemoteDataSource {
 
     private let urlSession: URLSession
