@@ -24,7 +24,8 @@ struct MainView: View {
                             Spacer()
                             Button { store.send(.sortByPriceTapped) } label: {
                                 HStack(spacing: 4) {
-                                    Text("Price ($)")
+                                    let currencySymbol = store.settings.selectedCurrency == .usd ? "$" : "₩"
+                                    Text("Price (\(currencySymbol))")
                                     Image(systemName: sortIcon(for: .price, sortKey: store.sortKey, sortOrder: store.sortOrder))
                                 }
                             }
