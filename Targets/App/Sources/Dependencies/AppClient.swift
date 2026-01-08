@@ -5,6 +5,8 @@ import Foundation
 struct AppClient {
     var currentLanguage: @Sendable () -> String?
     var setLanguage: @Sendable (String) -> Void
+    var currentCurrency: @Sendable () -> String?
+    var setCurrency: @Sendable (String) -> Void
     var terminate: @Sendable () -> Void
 }
 
@@ -16,6 +18,12 @@ extension AppClient: DependencyKey {
         setLanguage: { lang in
             UserDefaults.standard.set([lang], forKey: "AppleLanguages")
         },
+        currentCurrency: {
+            UserDefaults.standard.string(forKey: "selectedCurrency")
+        },
+        setCurrency: { currencyRawValue in
+            UserDefaults.standard.set(currencyRawValue, forKey: "selectedCurrency")
+        },
         terminate: {
             exit(0)
         }
@@ -24,6 +32,8 @@ extension AppClient: DependencyKey {
     static let testValue = Self(
         currentLanguage: { "en" },
         setLanguage: { _ in },
+        currentCurrency: { "usd" },
+        setCurrency: { _ in },
         terminate: { }
     )
 }

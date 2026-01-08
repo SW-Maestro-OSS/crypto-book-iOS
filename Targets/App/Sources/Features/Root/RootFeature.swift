@@ -8,18 +8,8 @@ struct RootFeature {
   @ObservableState
   struct State: Equatable {
     var route: Route = .splash
-    var main: MainFeature.State
+    var main = MainFeature.State()
     var exchangeRate: Double?
-
-    init() {
-      @Dependency(\.appClient) var appClient
-      let currentLanguageCode = appClient.currentLanguage()
-      let currentLanguage: SettingsFeature.Language =
-        (currentLanguageCode == "ko") ? .korean : .english
-      self.main = MainFeature.State(
-        settings: .init(selectedLanguage: currentLanguage)
-      )
-    }
   }
 
   enum Route {
@@ -29,6 +19,7 @@ struct RootFeature {
 
   enum Action {
     case onAppear
+    case setInitialSettings(language: SettingsFeature.Language, currency: CurrencyUnit)
     case splashTimerFinished
     case marketTickerResponse(Result<[MarketTicker], Error>)
     case exchangeRateResponse(Result<Double, Error>)
@@ -53,6 +44,16 @@ struct RootFeature {
       case .onAppear:
         return .merge(
           .run { send in
+            @Dependency(\.appClient) var appClient
+            let langCode = appClient.currentLanguage()
+            let lang: SettingsFeature.Language = (langCode == "ko") ? .korean : .english
+            
+            let currRawValue = appClient.currentCurrency()
+            let curr: CurrencyUnit = (currRawValue == CurrencyUnit.krw.rawValue) ? .krw : .usd
+            
+            await send(.setInitialSettings(language: lang, currency: curr))
+          },
+          .run { send in
             try await clock.sleep(for: .seconds(2))
             await send(.splashTimerFinished)
           },
@@ -75,6 +76,11 @@ struct RootFeature {
                 }))
           }
         )
+
+      case let .setInitialSettings(language, currency):
+        state.main.settings.selectedLanguage = language
+        state.main.settings.selectedCurrency = currency
+        return .none
 
       case .splashTimerFinished:
         state.route = .main
