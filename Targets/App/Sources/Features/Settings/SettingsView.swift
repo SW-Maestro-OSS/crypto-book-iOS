@@ -28,6 +28,7 @@ struct SettingsView: View {
                     }
                 }
                 .navigationTitle("Settings")
+                .alert($store.scope(state: \.alert, action: \.alert))
             }
         }
     }
