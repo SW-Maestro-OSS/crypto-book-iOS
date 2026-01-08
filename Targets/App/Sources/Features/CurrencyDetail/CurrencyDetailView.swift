@@ -2,71 +2,58 @@ import SwiftUI
 import Charts
 import ComposableArchitecture
 import Entity
-import Infra // CachedAsyncImage 사용을 위함
+import Infra // For using CachedAsyncImage
 
+/// A view that displays detailed information about a specific cryptocurrency.
 struct CurrencyDetailView: View {
+    
+    // MARK: - Properties
+    
     @Perception.Bindable var store: StoreOf<CurrencyDetailFeature>
-    @Environment(\.openURL) var openURL // 뉴스 URL을 열기 위함
+    @Environment(\.openURL) private var openURL // To open news URLs
 
+    // MARK: - Body
+    
     var body: some View {
         WithPerceptionTracking {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // 1. Header Section: 실시간 가격 및 등락률
-                    headerSection(
-                        midPrice: store.midPrice,
-                        previousClosePrice: store.previousClosePrice,
-                        priceChange24h: store.priceChange24h,
-                        changePercent24h: store.changePercent24h,
-                        currency: store.selectedCurrency,
-                        exchangeRate: store.exchangeRate
-                    )
-                    
+                    headerSection
                     Divider()
-
-                    // 2. Chart Section: 7일 캔들 차트 (Placeholder 형태)
                     chartSection
-                    
                     Divider()
-
-                    // 3. AI Insight Section: 매수/매도 심리 및 분석 요약
                     aiInsightSection
-                    
                     Divider()
-
-                    // 4. News Section: 관련 종목 뉴스 및 아티클
-                   // newsSection
+                    // newsSection
                 }
                 .padding()
             }
             .navigationTitle(store.symbol)
             .navigationBarTitleDisplayMode(.inline)
-            
             .onAppear { store.send(.onAppear) }
         }
     }
 
     // MARK: - Subviews
 
-    private func headerSection(
-        midPrice: Double?,
-        previousClosePrice: Double?,
-        priceChange24h: Double?,
-        changePercent24h: Double?,
-        currency: CurrencyUnit,
-        exchangeRate: Double?
-    ) -> some View {
+    /// The header section displaying the current price and 24-hour change.
+    @ViewBuilder
+    private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .bottom) {
-                if let midPrice {
-                    Text(PriceFormatter.format(price: midPrice, currency: currency, exchangeRate: exchangeRate))
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                if let midPrice = store.midPrice {
+                    Text(PriceFormatter.format(
+                        price: midPrice,
+                        currency: store.selectedCurrency,
+                        exchangeRate: store.exchangeRate
+                    ))
+                    .font(.system(size: 32, weight: .bold, design: .monospaced))
                 } else {
                     Text("---")
                         .font(.system(size: 32, weight: .bold))
                 }
 
-                if currency == .usd {
+                if store.selectedCurrency == .usd {
                     Text("USDT")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -74,18 +61,26 @@ struct CurrencyDetailView: View {
                 }
             }
 
-            if let prevClose = previousClosePrice,
-               let priceChange = priceChange24h,
-               let percentChange = changePercent24h {
+            if let prevClose = store.previousClosePrice,
+               let priceChange = store.priceChange24h,
+               let percentChange = store.changePercent24h {
 
                 let sign = priceChange >= 0 ? "+" : ""
                 let color: Color = priceChange >= 0 ? .green : .red
 
-                let formattedPrevClose = PriceFormatter.format(price: prevClose, currency: currency, exchangeRate: exchangeRate)
-                let formattedPriceChange = PriceFormatter.format(price: abs(priceChange), currency: currency, exchangeRate: exchangeRate)
+                let formattedPrevClose = PriceFormatter.format(
+                    price: prevClose,
+                    currency: store.selectedCurrency,
+                    exchangeRate: store.exchangeRate
+                )
+                let formattedPriceChange = PriceFormatter.format(
+                    price: abs(priceChange),
+                    currency: store.selectedCurrency,
+                    exchangeRate: store.exchangeRate
+                )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("어제의 종가 \(formattedPrevClose)")
+                    Text("Yesterday's Close \(formattedPrevClose)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -97,6 +92,7 @@ struct CurrencyDetailView: View {
         }
     }
 
+    /// The chart section displaying a 7-day candlestick chart.
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("7D Chart (1D Interval)")
@@ -109,7 +105,7 @@ struct CurrencyDetailView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(.systemGray6))
                     .frame(height: 200)
-                    .overlay(Text("차트 데이터를 불러올 수 없습니다.").font(.caption))
+                    .overlay(Text("Cannot load chart data.").font(.caption))
             } else {
                 CandlestickChart(candles: store.candles)
                     .frame(height: 200)
@@ -117,6 +113,7 @@ struct CurrencyDetailView: View {
         }
     }
 
+    /// The AI insight section displaying market sentiment and analysis.
     private var aiInsightSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("AI Insight")
@@ -124,22 +121,22 @@ struct CurrencyDetailView: View {
             
             if let insight = store.insight {
                 VStack(spacing: 12) {
-                    // 매수/매도 게이지 바
+                    // Buy/Sell Gauge Bar
                     HStack(spacing: 0) {
                         Rectangle()
                             .fill(.red)
                             .frame(width: CGFloat(insight.sellPercent) * 2.5, height: 20)
-                            .overlay(Text("매도 \(insight.sellPercent)").font(.caption2).bold().white(), alignment: .leading)
+                            .overlay(Text("Sell \(insight.sellPercent)").font(.caption2).bold().white(), alignment: .leading)
                         
                         Rectangle()
                             .fill(.green)
                             .frame(width: CGFloat(insight.buyPercent) * 2.5, height: 20)
-                            .overlay(Text("매수 \(insight.buyPercent)").font(.caption2).bold().white(), alignment: .trailing)
+                            .overlay(Text("Buy \(insight.buyPercent)").font(.caption2).bold().white(), alignment: .trailing)
                     }
                     .clipShape(Capsule())
                     .frame(maxWidth: .infinity)
                     
-                    // 인사이트 요약 불렛 포인트
+                    // Insight Summary Bullets
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(insight.bullets, id: \.self) { bullet in
                             HStack(alignment: .top, spacing: 8) {
@@ -155,15 +152,15 @@ struct CurrencyDetailView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(12)
             } else if store.insightLoading {
-                ProgressView("분석 중...")
+                ProgressView("Analyzing...")
                     .frame(maxWidth: .infinity)
             }
         }
     }
-
 }
 
-// 텍스트 색상 편의를 위한 확장
-extension View {
+// MARK: - Extensions
+
+private extension View {
     func white() -> some View { self.foregroundStyle(.white) }
 }
