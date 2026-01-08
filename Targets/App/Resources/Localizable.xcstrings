@@ -3,188 +3,529 @@
   "strings" : {
     "---" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "---" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "---" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "---"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "---"
+          }
+        }
       }
     },
     "%@%@ (%@%@%%)" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@%2$@ (%3$@%4$@%%)" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@%2$@ (%3$@%4$@%%)"
+          }
+        }
       },
       "shouldTranslate" : false
     },
     "•" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "•" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "•" } }
-      }
-    },
-    "24h Change %" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "24h Change %" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "24시간 등락률" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "•"
+          }
+        }
       }
     },
     "7D Chart (1D Interval)" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "7D Chart (1D Interval)" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "7일 차트 (1일 간격)" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7D Chart (1D Interval)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7일 차트 (1일 간격)"
+          }
+        }
+      }
+    },
+    "24h Change %" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24h Change %"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24시간 등락률"
+          }
+        }
       }
     },
     "AI Insight" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "AI Insight" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "AI 분석" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI Insight"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI 분석"
+          }
+        }
       }
     },
     "alert.restart.button.cancel" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "취소"
+          }
+        }
       }
     },
     "alert.restart.button.confirm" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재시작" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "재시작"
+          }
+        }
       }
     },
     "alert.restart.message" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The app needs to be restarted to apply the language change." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "언어 설정을 적용하려면 앱을 재시작해야 합니다." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app needs to be restarted to apply the language change."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "언어 설정을 적용하려면 앱을 재시작해야 합니다."
+          }
+        }
       }
     },
     "alert.restart.title" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart Required" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재시작 필요" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart Required"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "재시작 필요"
+          }
+        }
       }
     },
     "Analyzing..." : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Analyzing..." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "분석 중..." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyzing..."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "분석 중..."
+          }
+        }
       }
     },
     "App Language" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "App Language" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱 언어" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Language"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "앱 언어"
+          }
+        }
       }
     },
     "Buy %@" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Buy %@" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매수 %@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매수 %@"
+          }
+        }
       }
     },
     "Cannot load chart data." : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cannot load chart data." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "차트 데이터를 불러올 수 없습니다." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot load chart data."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "차트 데이터를 불러올 수 없습니다."
+          }
+        }
       }
     },
     "Close" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "종가" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "종가"
+          }
+        }
       }
     },
     "CryptoBook" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "CryptoBook" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CryptoBook"
+          }
+        }
       },
       "shouldTranslate" : false
     },
     "Currency Unit" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Currency Unit" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통화 단위" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency Unit"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "통화 단위"
+          }
+        }
       }
     },
     "High" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "High" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고가" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "고가"
+          }
+        }
       }
     },
     "Index" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Index" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "날짜" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Index"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날짜"
+          }
+        }
       }
     },
     "Language" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "언어" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "언어"
+          }
+        }
       }
     },
     "Low" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Low" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저가" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저가"
+          }
+        }
       }
     },
     "Market" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Market" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마켓" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Market"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마켓"
+          }
+        }
       }
     },
     "Open" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시가" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시가"
+          }
+        }
       }
     },
     "Price (%@)" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Price (%@)" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가격 (%@)" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price (%@)"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가격 (%@)"
+          }
+        }
       }
     },
     "Price Display" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Price Display" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가격 표시" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price Display"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가격 표시"
+          }
+        }
       }
     },
     "Sell %@" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sell %@" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매도 %@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sell %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매도 %@"
+          }
+        }
       }
     },
     "Settings" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "설정"
+          }
+        }
       }
     },
     "Symbol" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Symbol" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "심볼" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "심볼"
+          }
+        }
       }
     },
     "USDT" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "USDT" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "USDT"
+          }
+        }
       },
       "shouldTranslate" : false
     },
     "Vol: %@" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Vol: %@" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "거래량: %@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vol: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "거래량: %@"
+          }
+        }
       }
     },
     "Yesterday's Close %@" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Yesterday's Close %@" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어제의 종가 %@" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday's Close %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "어제의 종가 %@"
+          }
+        }
+      }
+    },
+    "News" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뉴스"
+          }
+        }
+      }
+    },
+    "No news available." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No news available."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "뉴스가 없습니다."
+          }
+        }
       }
     }
   },

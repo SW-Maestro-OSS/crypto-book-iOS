@@ -10,7 +10,6 @@ struct CurrencyDetailView: View {
     // MARK: - Properties
     
     @Perception.Bindable var store: StoreOf<CurrencyDetailFeature>
-    @Environment(\.openURL) private var openURL // To open news URLs
 
     // MARK: - Body
     
@@ -24,7 +23,7 @@ struct CurrencyDetailView: View {
                     Divider()
                     aiInsightSection
                     Divider()
-                    // newsSection
+                    newsSection
                 }
                 .padding()
             }
@@ -156,6 +155,72 @@ struct CurrencyDetailView: View {
                     .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    /// The news section displaying related cryptocurrency news.
+    private var newsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("News")
+                .font(.headline)
+
+            if store.newsLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 100)
+            } else if store.news.isEmpty {
+                emptyNewsView
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(store.news.prefix(10)) { article in
+                        newsRow(article)
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyNewsView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "newspaper")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("No news available.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+    }
+
+    private func newsRow(_ article: NewsArticle) -> some View {
+        Button {
+            store.send(.newsItemTapped(article))
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(article.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .foregroundStyle(.primary)
+
+                    Text(article.date, style: .relative)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 4)
+            }
+            .padding(12)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
     }
 }
 

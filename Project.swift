@@ -38,7 +38,8 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
-                    "API_KEY": "$(API_KEY)", // Expose variable from xcconfig to Info.plist
+                    "API_KEY": "$(API_KEY)",
+                    "CRYPTOPANIC_API_KEY": "$(CRYPTOPANIC_API_KEY)",
                     "NSAppTransportSecurity": .dictionary([
                         "NSExceptionDomains": .dictionary([
                             "www.koreaexim.go.kr": .dictionary([

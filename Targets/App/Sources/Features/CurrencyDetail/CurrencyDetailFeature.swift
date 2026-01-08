@@ -112,6 +112,8 @@ struct CurrencyDetailFeature {
     // MARK: - Reducer
     @Dependency(\.currencyDetailStreaming) var streaming
     @Dependency(\.binanceAPIClient) var binanceAPIClient
+    @Dependency(\.newsClient) var newsClient
+    @Dependency(\.openURL) var openURL
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -220,16 +222,29 @@ struct CurrencyDetailFeature {
                 state.newsLoading = true
                 state.newsError = nil
 
-                // TODO: Replace with real CryptoPanic fetch
-                return .send(.newsResponse(.success([])))
+                // Cryptopanic API expects currency code without USDT suffix (e.g., "BTC" not "BTCUSDT")
+                let currency = state.symbol.replacingOccurrences(of: "USDT", with: "")
+                print("[News] Fetching news for currency: \(currency)")
+                return .run { send in
+                    do {
+                        let articles = try await newsClient.fetchNews(currency)
+                        print("[News] Fetched \(articles.count) articles")
+                        await send(.newsResponse(.success(articles)))
+                    } catch {
+                        print("[News] Error fetching news: \(error)")
+                        await send(.newsResponse(.failure(.network(error.localizedDescription))))
+                    }
+                }
 
             case let .newsResponse(.success(items)):
                 state.newsLoading = false
                 state.news = items
+                print("[News] Response success: \(items.count) items stored")
                 return .send(.computeInsight)
 
             case let .newsResponse(.failure(error)):
                 state.newsLoading = false
+                print("[News] Response failure: \(error)")
                 state.newsError = {
                     switch error {
                     case let .network(message): return message
@@ -256,9 +271,10 @@ struct CurrencyDetailFeature {
 
             
 
-            case .newsItemTapped:
-                // The View should handle opening the URL (system browser).
-                return .none
+            case let .newsItemTapped(article):
+                return .run { _ in
+                    await openURL(article.originalURL)
+                }
             }
         }
     }

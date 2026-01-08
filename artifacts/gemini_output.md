@@ -1,195 +1,262 @@
-# 언어 변경 시 재시작 기능 구현
+# 코인 상세 화면 뉴스 기능 구현
 
-`SettingsFeature`에 언어 변경 시 사용자에게 알림을 표시하고 앱을 재시작(종료)하는 기능을 추가합니다.
+`PROJECT.md` 명세에 따라 Cryptopanic API를 사용하여 코인 상세 화면에 관련 뉴스 목록을 표시하는 기능을 구현합니다. 데이터 레이어부터 피처 레이어까지 필요한 모든 코드를 포함합니다.
 
-## 1. `AppClient` 의존성 추가
+## 1. 데이터 레이어 추가 (DTO, Service)
 
-앱 종료 및 언어 설정 저장을 위한 `AppClient`를 새로 추가합니다. 이 클라이언트는 TCA의 의존성 관리 시스템을 사용하여 로직을 분리하고 테스트 용이성을 높입니다.
+API 통신 및 데이터 처리를 위한 DTO와 Service를 추가합니다.
 
-**File: `Targets/App/Sources/Dependencies/AppClient.swift` (New File)**
+**File: `Targets/Data/Sources/DTOs/CryptopanicDTO.swift` (New File)**
+```swift
+import Foundation
+import Entity
+
+struct CryptopanicResponseDTO: Decodable {
+    let results: [NewsPostDTO]
+}
+
+struct NewsPostDTO: Decodable {
+    let title: String
+    let url: URL
+    let publishedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case title, url
+        case publishedAt = "published_at"
+    }
+}
+
+extension NewsPostDTO {
+    func toEntity() -> NewsArticle? {
+        let formatter = ISO8601DateFormatter()
+        // ISO8601 날짜 형식에 유연하게 대응하기 위해 두 가지 옵션을 시도합니다.
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: publishedAt) else {
+            formatter.formatOptions = [.withInternetDateTime]
+            guard let dateWithoutFractionalSeconds = formatter.date(from: publishedAt) else {
+                return nil
+            }
+            return NewsArticle(title: title, date: dateWithoutFractionalSeconds, originalURL: url)
+        }
+        return NewsArticle(title: title, date: date, originalURL: url)
+    }
+}
+```
+
+**File: `Targets/Data/Sources/Services/CryptopanicService.swift` (New File)**
+```swift
+import Foundation
+import Infra
+
+enum CryptopanicError: Error {
+    case invalidURL
+    case networkError(Error)
+    case decodingError(Error)
+    case apiKeyMissing
+}
+
+final class CryptopanicService {
+    private let baseURL = "https://cryptopanic.com/api/v1/posts/"
+
+    func fetchNews(currency: String) async throws -> CryptopanicResponseDTO {
+        // PlistKeys를 통해 API 키를 안전하게 가져옵니다.
+        guard let apiKey = PlistKeys.cryptopanicApiKey else {
+            throw CryptopanicError.apiKeyMissing
+        }
+
+        var components = URLComponents(string: baseURL)
+        components?.queryItems = [
+            URLQueryItem(name: "auth_token", value: apiKey),
+            URLQueryItem(name: "currencies", value: currency),
+            URLQueryItem(name: "public", value: "true")
+        ]
+
+        guard let url = components?.url else {
+            throw CryptopanicError.invalidURL
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(CryptopanicResponseDTO.self, from: data)
+            return response
+        } catch let error as DecodingError {
+            throw CryptopanicError.decodingError(error)
+        } catch {
+            throw CryptopanicError.networkError(error)
+        }
+    }
+}
+```
+*(참고: 위 코드는 `Configs/Secrets.xcconfig` 파일에 `CRYPTOPANIC_API_KEY = "YOUR_API_KEY"`와 같은 설정이 이미 되어 있다고 가정합니다.)*
+
+## 2. 도메인 및 데이터 레이어 추가 (Repository)
+
+**File: `Targets/Domain/Sources/Repositories/NewsRepository.swift` (New File)**
+```swift
+import Entity
+
+public protocol NewsRepository {
+    func fetchNews(currency: String) async throws -> [NewsArticle]
+}
+```
+
+**File: `Targets/Data/Sources/Repositories/NewsRepositoryImpl.swift` (New File)**
+```swift
+import Domain
+import Entity
+
+public final class NewsRepositoryImpl: NewsRepository {
+    private let cryptopanicService: CryptopanicService
+
+    public init(cryptopanicService: CryptopanicService) {
+        self.cryptopanicService = cryptopanicService
+    }
+
+    public func fetchNews(currency: String) async throws -> [NewsArticle] {
+        let response = try await cryptopanicService.fetchNews(currency: currency)
+        return response.results.compactMap { $0.toEntity() }
+    }
+}
+```
+
+## 3. 앱 의존성 추가 (Client)
+
+**File: `Targets/App/Sources/Dependencies/NewsClient.swift` (New File)**
 ```swift
 import ComposableArchitecture
+import Data
+import Domain
+import Entity
 import Foundation
 
 @DependencyClient
-struct AppClient {
-    var setLanguage: @Sendable (String) -> Void
-    var terminate: @Sendable () -> Void
+public struct NewsClient {
+    public var fetchNews: @Sendable (String) async throws -> [NewsArticle]
 }
 
-extension AppClient: DependencyKey {
-    static let liveValue = Self(
-        setLanguage: { lang in
-            // "AppleLanguages" 키를 사용하여 UserDefaults에 사용자가 선택한 언어를 저장합니다.
-            // 앱이 다음 번에 시작될 때 이 설정을 사용하게 됩니다.
-            UserDefaults.standard.set([lang], forKey: "AppleLanguages")
-        },
-        terminate: {
-            // 앱을 종료합니다.
-            exit(0)
-        }
-    )
+extension NewsClient: DependencyKey {
+    public static let liveValue: Self = {
+        let service = CryptopanicService()
+        let repository = NewsRepositoryImpl(cryptopanicService: service)
+        
+        return Self(
+            fetchNews: { currency in
+                try await repository.fetchNews(currency: currency)
+            }
+        )
+    }()
     
-    static let testValue = Self(
-        setLanguage: { _ in },
-        terminate: { }
+    public static let testValue = Self(
+        fetchNews: { _ in
+            [
+                NewsArticle(title: "Test News 1: Bitcoin to the Moon", date: .now, originalURL: URL(string: "https://test.com/1")!),
+                NewsArticle(title: "Test News 2: Ethereum's new update", date: .now.addingTimeInterval(-3600), originalURL: URL(string: "https://test.com/2")!)
+            ]
+        }
     )
 }
 
 extension DependencyValues {
-    var appClient: AppClient {
-        get { self[AppClient.self] }
-        set { self[AppClient.self] = newValue }
+    public var newsClient: NewsClient {
+        get { self[NewsClient.self] }
+        set { self[NewsClient.self] = newValue }
     }
 }
 ```
 
-## 2. `SettingsFeature` 수정
+## 4. `CurrencyDetailFeature` 및 `View` 수정
 
-언어 변경을 감지하고, Alert을 표시하며, 재시작 액션을 처리하는 로직을 `SettingsFeature`에 추가합니다.
+뉴스 데이터를 불러오고 UI에 표시하는 로직을 추가합니다.
 
-**File: `Targets/App/Sources/Features/Settings/SettingsFeature.swift` (Updated)**
+**File: `Targets/App/Sources/Features/CurrencyDetail/CurrencyDetailFeature.swift` (Updated)**
+
 ```swift
-import ComposableArchitecture
-import Infra
-import SwiftUI // For TextState
+// 1. Feature 최상단에 의존성을 추가합니다.
+@Dependency(\.newsClient) var newsClient
+@Dependency(\.openURL) var openURL
 
-@Reducer
-struct SettingsFeature {
-    @ObservableState
-    struct State: Equatable {
-        var selectedCurrency: CurrencyUnit = .usd
-        var selectedLanguage: Language = .english
-        var exchangeRate: Double?
-        var isLoadingRate: Bool = false
-        
-        @Presents var alert: AlertState<Action.Alert>?
-    }
+// 2. State 구조체 내부에 뉴스 관련 상태를 추가합니다.
+@ObservableState
+struct State: Equatable {
+    // ... 기존 상태들
+    var news: [NewsArticle] = []
+    var isLoadingNews: Bool = false
+}
 
-    enum Action: BindableAction {
-        case binding(BindingAction<State>)
-        case fetchExchangeRate
-        case exchangeRateResponse(Result<Double, Error>)
-        case alert(PresentationAction<Alert>)
-        
-        enum Alert: Equatable {
-            case restartButtonTapped
+// 3. Action 열거형에 뉴스 관련 액션을 추가합니다.
+enum Action {
+    // ... 기존 액션들
+    case newsArticleTapped(URL)
+    case newsResponse(Result<[NewsArticle], Error>)
+}
+
+// 4. Reducer의 onAppear 액션에 뉴스 호출 Effect를 추가합니다.
+case .onAppear:
+    return .merge(
+        // ... 기존 Effect들
+        .run { [symbol = state.symbol] send in
+            state.isLoadingNews = true
+            await send(.newsResponse(Result { try await newsClient.fetchNews(symbol) }))
         }
+    )
+
+// 5. Reducer에 뉴스 응답 및 탭 액션 처리 로직을 추가합니다.
+case let .newsResponse(.success(articles)):
+    state.isLoadingNews = false
+    state.news = articles
+    return .none
+
+case let .newsResponse(.failure(error)):
+    state.isLoadingNews = false
+    print("News fetch error: \(error)")
+    return .none
+
+case let .newsArticleTapped(url):
+    return .run { _ in
+        await openURL(url)
     }
+```
 
-    enum Language: String, CaseIterable, Equatable, Identifiable {
-        case english = "English"
-        case korean = "한국어"
+**File: `Targets/App/Sources/Features/CurrencyDetail/CurrencyDetailView.swift` (Updated)**
 
-        var id: Self { self }
-        
-        var localeIdentifier: String {
-            switch self {
-            case .english: "en"
-            case .korean: "ko"
-            }
-        }
-    }
+```swift
+// 1. body의 VStack 내부에서 주석 처리된 newsSection을 활성화합니다.
+// newsSection
 
-    @Dependency(\.exchangeRateClient) var exchangeRateClient
-    @Dependency(\.appClient) var appClient
+// 2. View 하단에 newsSection 구현을 추가합니다.
+private var newsSection: some View {
+    VStack(alignment: .leading, spacing: 16) {
+        Text("News")
+            .font(.headline)
 
-    var body: some ReducerOf<Self> {
-        BindingReducer()
-
-        Reduce { state, action in
-            switch action {
-            case .binding(\.selectedCurrency):
-                print("[SettingsFeature] Currency changed to: \(state.selectedCurrency)")
-                if state.selectedCurrency == .krw {
-                    return .send(.fetchExchangeRate)
-                }
-                return .none
-                
-            case .binding(\.selectedLanguage):
-                let selectedLanguage = state.selectedLanguage
-                state.alert = .init(
-                    title: { TextState("alert.restart.title") },
-                    message: { TextState("alert.restart.message") },
-                    buttons: [
-                        .destructive(TextState("alert.restart.button.confirm"), action: .send(.restartButtonTapped)),
-                        .cancel(TextState("alert.restart.button.cancel"))
-                    ]
-                )
-                return .run { _ in
-                    await appClient.setLanguage(selectedLanguage.localeIdentifier)
-                }
-
-            case .binding:
-                return .none
-
-            case .fetchExchangeRate:
-                state.isLoadingRate = true
-                print("[SettingsFeature] Fetching USD -> KRW exchange rate...")
-                return .run { send in
-                    do {
-                        let rate = try await exchangeRateClient.fetchUSDtoKRW()
-                        print("[SettingsFeature] Exchange rate fetched: \(rate)")
-                        await send(.exchangeRateResponse(.success(rate)))
-                    } catch {
-                        print("[SettingsFeature] Exchange rate error: \(error)")
-                        await send(.exchangeRateResponse(.failure(error)))
+        if store.isLoadingNews {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+        } else if store.news.isEmpty {
+            Text("No news available.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        } else {
+            VStack(alignment: .leading, spacing: 20) {
+                ForEach(store.news) { article in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(article.title)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .lineLimit(2)
+                        Text(article.date, style: .date)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        store.send(.newsArticleTapped(article.originalURL))
                     }
                 }
-
-            case let .exchangeRateResponse(.success(rate)):
-                state.isLoadingRate = false
-                state.exchangeRate = rate
-                print("[SettingsFeature] Exchange rate stored: \(rate) KRW/USD")
-                return .none
-
-            case let .exchangeRateResponse(.failure(error)):
-                state.isLoadingRate = false
-                print("[SettingsFeature] Failed to fetch rate: \(error.localizedDescription)")
-                return .none
-                
-            case .alert(.presented(.restartButtonTapped)):
-                return .run { _ in
-                    await appClient.terminate()
-                }
-                
-            case .alert:
-                return .none
             }
         }
-        .ifLet(\.$alert, action: \.alert)
     }
 }
-```
-
-## 3. `Localizable.xcstrings` 키 추가
-
-재시작 Alert에 사용될 문자열 키와 번역을 추가합니다. 아래 내용을 `strings` 객체 안에 추가해주세요.
-
-**File: `Targets/App/Resources/Localizable.xcstrings` (Additions)**
-```json
-    "alert.restart.title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Restart Required" } },
-        "ko" : { "stringUnit" : { "state" : "new", "value" : "재시작 필요" } }
-      }
-    },
-    "alert.restart.message" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "new", "value" : "The app needs to be restarted to apply the language change." } },
-        "ko" : { "stringUnit" : { "state" : "new", "value" : "언어 설정을 적용하려면 앱을 재시작해야 합니다." } }
-      }
-    },
-    "alert.restart.button.confirm" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Restart" } },
-        "ko" : { "stringUnit" : { "state" : "new", "value" : "재시작" } }
-      }
-    },
-    "alert.restart.button.cancel" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "new", "value" : "Cancel" } },
-        "ko" : { "stringUnit" : { "state" : "new", "value" : "취소" } }
-      }
-    }
 ```
