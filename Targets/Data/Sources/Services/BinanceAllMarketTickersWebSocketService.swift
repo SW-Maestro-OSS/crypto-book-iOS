@@ -22,7 +22,7 @@ final class BinanceAllMarketTickersWebSocketService: MarketTickerRemoteDataSourc
         self.urlSession = urlSession
     }
 
-    func connect() -> AsyncThrowingStream<[MarketTicker], Error> {
+    func connect() -> AsyncThrowingStream<[MarketTickerDTO], Error> {
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
 
         let url = baseURL.appending(path: "/ws/!ticker@arr")
@@ -50,7 +50,7 @@ final class BinanceAllMarketTickersWebSocketService: MarketTickerRemoteDataSourc
 
                             let dtos = try JSONDecoder()
                                 .decode([MarketTickerDTO].self, from: data)
-                            continuation.yield(dtos.map { $0.toDomain() })
+                            continuation.yield(dtos)
                             receiveNext()
                         } catch {
                             receiveNext()

@@ -20,8 +20,21 @@ public final class MarketTickerRepositoryImpl: MarketTickerRepository {
     init(remoteDataSource: MarketTickerRemoteDataSource) {
         self.remoteDataSource = remoteDataSource
     }
-
+    
     public func tickerStream() -> AsyncThrowingStream<[MarketTicker], Error> {
-        remoteDataSource.connect()
+        return AsyncThrowingStream { continuation in
+            Task {
+                do { let dtoStream = remoteDataSource.connect()
+                    
+                    for try await dtos in dtoStream {
+                        let tickers = dtos.map{$0.toDomain()}
+                        continuation.yield(tickers)
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
     }
 }

@@ -40,6 +40,7 @@ let project = Project(
                     ],
                     "API_KEY": "$(API_KEY)",
                     "CRYPTOPANIC_API_KEY": "$(CRYPTOPANIC_API_KEY)",
+                    "GEMINI_API_KEY": "$(GEMINI_API_KEY)",
                     "NSAppTransportSecurity": .dictionary([
                         "NSExceptionDomains": .dictionary([
                             "www.koreaexim.go.kr": .dictionary([

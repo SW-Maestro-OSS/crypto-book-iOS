@@ -114,6 +114,7 @@ struct CurrencyDetailFeature {
     @Dependency(\.binanceAPIClient) var binanceAPIClient
     @Dependency(\.newsClient) var newsClient
     @Dependency(\.openURL) var openURL
+    @Dependency(\.aiInsightClient) var aiInsightClient
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -126,7 +127,6 @@ struct CurrencyDetailFeature {
                 return .merge(
                     .send(.fetchChart),
                     .send(.fetchNews),
-                    .send(.computeInsight),
                     .run { [symbol = state.symbol] send in
                         defer { streaming.disconnect() }
                         do {
@@ -173,20 +173,17 @@ struct CurrencyDetailFeature {
                 state.chartLoading = false
                 state.candles = candles
                 // Start kline streaming for real-time updates
-                return .merge(
-                    .send(.computeInsight),
-                    .run { [symbol = state.symbol] send in
-                        defer { binanceAPIClient.disconnectKlineStream() }
-                        do {
-                            for try await candle in binanceAPIClient.streamKline(symbol, "1d") {
-                                await send(.candleUpdated(candle))
-                            }
-                        } catch {
-                            // Swallow streaming errors
+                return .run { [symbol = state.symbol] send in
+                    defer { binanceAPIClient.disconnectKlineStream() }
+                    do {
+                        for try await candle in binanceAPIClient.streamKline(symbol, "1d") {
+                            await send(.candleUpdated(candle))
                         }
+                    } catch {
+                        // Swallow streaming errors
                     }
-                    .cancellable(id: CancelID.klineSocket, cancelInFlight: true)
-                )
+                }
+                .cancellable(id: CancelID.klineSocket, cancelInFlight: true)
 
             case let .chartResponse(.failure(error)):
                 state.chartLoading = false
@@ -254,15 +251,29 @@ struct CurrencyDetailFeature {
 
             // MARK: Insight
             case .computeInsight:
-                // Very small rule-based placeholder:
-                state.insightLoading = true
+                // Skip if already has insight or still loading data
+                guard state.insight == nil else { return .none }
 
-                let insight = Self.makePlaceholderInsight(
-                    symbol: state.symbol,
-                    candles: state.candles,
-                    news: state.news
-                )
-                return .send(.insightComputed(insight))
+                state.insightLoading = true
+                print("[AI] Computing insight for \(state.symbol)...")
+
+                return .run { [symbol = state.symbol, candles = state.candles, news = state.news] send in
+                    do {
+                        let result = try await aiInsightClient.generateInsight(symbol, candles, news)
+                        print("[AI] Insight generated successfully")
+                        let insight = Insight(
+                            buyPercent: result.buyPercent,
+                            sellPercent: result.sellPercent,
+                            bullets: result.bullets
+                        )
+                        await send(.insightComputed(insight))
+                    } catch {
+                        print("[AI] Error generating insight: \(error)")
+                        // Fallback to placeholder
+                        let fallback = makeFallbackInsight(symbol: symbol, candles: candles, news: news)
+                        await send(.insightComputed(fallback))
+                    }
+                }
 
             case let .insightComputed(insight):
                 state.insightLoading = false
@@ -279,39 +290,52 @@ struct CurrencyDetailFeature {
         }
     }
 
-    // MARK: - Helpers
+}
 
-    static func makePlaceholderInsight(
-        symbol: String,
-        candles: [Candle],
-        news: [NewsArticle]
-    ) -> Insight {
-        var buy = 50
-        var sell = 50
+// MARK: - Helpers
 
-        if let first = candles.first, let last = candles.last {
-            if last.close > first.open {
-                buy = 70
-                sell = 30
-            } else if last.close < first.open {
-                buy = 30
-                sell = 70
-            }
+private func makeFallbackInsight(
+    symbol: String,
+    candles: [Candle],
+    news: [NewsArticle]
+) -> CurrencyDetailFeature.Insight {
+    let currency = symbol.replacingOccurrences(of: "USDT", with: "")
+    var buy = 50
+    var sell = 50
+
+    if let first = candles.first, let last = candles.last {
+        if last.close > first.open {
+            buy = 60
+            sell = 40
+        } else if last.close < first.open {
+            buy = 40
+            sell = 60
         }
-
-        var bullets: [String] = []
-        bullets.append("현재 \(symbol)의 추세를 기반으로 한 간단 분석입니다.")
-
-        if !candles.isEmpty {
-            bullets.append("최근 7일(1D) 캔들 흐름을 반영했습니다.")
-        }
-
-        if !news.isEmpty {
-            bullets.append("관련 뉴스 신호를 함께 고려했습니다.")
-        } else {
-            bullets.append("현재는 뉴스 데이터가 없어 차트 중심으로 판단합니다.")
-        }
-
-        return Insight(buyPercent: buy, sellPercent: sell, bullets: bullets)
     }
+
+    var bullets: [String] = []
+
+    // 뉴스 헤드라인 요약
+    if !news.isEmpty {
+        let topNews = news.prefix(3)
+        for article in topNews {
+            let shortTitle = article.title.count > 50
+                ? String(article.title.prefix(50)) + "..."
+                : article.title
+            bullets.append(shortTitle)
+        }
+    }
+
+    // 차트 추세
+    if let first = candles.first, let last = candles.last {
+        let change = ((last.close - first.open) / first.open) * 100
+        let trend = change >= 0 ? "상승" : "하락"
+        bullets.append("\(currency) 7일간 \(String(format: "%.1f", abs(change)))% \(trend) 추세")
+    }
+
+    if bullets.isEmpty {
+        bullets.append("데이터를 불러오는 중입니다.")
+    }
+
+    return CurrencyDetailFeature.Insight(buyPercent: buy, sellPercent: sell, bullets: bullets)
 }

@@ -11,4 +11,8 @@ public enum PlistKeys {
     static public var cryptopanicApiKey: String? {
         Bundle.main.object(forInfoDictionaryKey: "CRYPTOPANIC_API_KEY") as? String
     }
+
+    static public var geminiApiKey: String? {
+        Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String
+    }
 }
