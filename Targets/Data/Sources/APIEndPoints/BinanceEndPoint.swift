@@ -13,7 +13,7 @@ enum BinanceEndpoint {
     case klines(symbol: String, interval: String, limit: Int)
     // WebSocket
     case allMarketTickers
-    case candlestick(symbol: String, interval: String)
+    case klineStream(symbol: String, interval: String)
     case currencyDetail(symbol: String)
 }
 
@@ -24,7 +24,7 @@ extension BinanceEndpoint: APIEndpoint {
             return "https://api.binance.com"
         case .allMarketTickers:
             return "wss://fstream.binance.com"
-        case .candlestick, .currencyDetail:
+        case .klineStream, .currencyDetail:
             return "wss://stream.binance.com:9443"
         }
     }
@@ -35,7 +35,7 @@ extension BinanceEndpoint: APIEndpoint {
             return "/api/v3/klines"
         case .allMarketTickers:
             return "/ws/!ticker@arr"
-        case .candlestick(let symbol, let interval):
+        case .klineStream(let symbol, let interval):
             return "/ws/\(symbol.lowercased())@kline_\(interval)"
         case .currencyDetail:
             return "/stream"

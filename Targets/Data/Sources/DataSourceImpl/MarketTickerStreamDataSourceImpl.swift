@@ -9,7 +9,7 @@
 import Foundation
 import Entity
 
-public final class MarketTickerRemoteDataSourceImpl: MarketTickerRemoteDataSource {
+public final class MarketTickerStreamDataSourceImpl: MarketTickerStreamDataSource {
     
     private let wsClient: WebSocketClient
     private let decoder: JSONDecoder

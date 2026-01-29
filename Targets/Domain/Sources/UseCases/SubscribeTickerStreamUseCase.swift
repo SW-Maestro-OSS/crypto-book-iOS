@@ -10,14 +10,14 @@ import Foundation
 import Entity
 
 public final class SubscribeKlineStreamUseCase {
-    private let repository: MarketTickerStreamRepository
+    private let repository: KlineStreamRepository
 
-    public init(repository: MarketTickerStreamRepository) {
+    public init(repository: KlineStreamRepository) {
         self.repository = repository
     }
 
-    public func execute() -> AsyncThrowingStream<[MarketTicker], Error> {
-        return repository.tickerStream()
+    public func execute(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error> {
+        return repository.kLineStream(symbol: symbol, interval: interval)
     }
 }
 

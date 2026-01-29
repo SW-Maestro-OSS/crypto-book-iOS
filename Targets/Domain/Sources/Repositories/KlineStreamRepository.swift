@@ -6,4 +6,8 @@
 //  Copyright © 2026 io.tuist. All rights reserved.
 //
 
-import Foundation
+import Entity
+
+public protocol KlineStreamRepository {
+    func kLineStream(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error>
+}

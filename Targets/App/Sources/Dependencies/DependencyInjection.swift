@@ -21,10 +21,21 @@ extension Container {
         }
     }
     
+    var subscribeCandleStickUseCase: Factory<SubscribeKlineStreamUseCase> {
+        self {
+            SubscribeKlineStreamUseCase(repository: self.klineStreamRepository())
+        }
+    }
+    
     // MARK: - Repositories
 
     var marketTickerStreamRepository: Factory<any MarketTickerStreamRepository> {
-        self { MarketTickerStreamRepositoryImpl(remoteDataSource: self.marketTickerRemoteDataSource()) }
+        self { MarketTickerStreamRepositoryImpl(remoteDataSource: self.marketTickerStreamDataSource()) }
+            .singleton
+    }
+    
+    var klineStreamRepository: Factory<any KlineStreamRepository> {
+        self { KlineStreamRepositoryImpl(remoteDataSource: self.candlestickStreamDataSource()) }
             .singleton
     }
 
@@ -34,8 +45,12 @@ extension Container {
     }
     
     // MARK: - DataSource
-    var marketTickerRemoteDataSource: Factory<any MarketTickerRemoteDataSource> {
-        self { MarketTickerRemoteDataSourceImpl(wsClient: self.standardWebSocketClient())}
+    var marketTickerStreamDataSource: Factory<any MarketTickerStreamDataSource> {
+        self { MarketTickerStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
+    }
+    
+    var candlestickStreamDataSource: Factory<any KlineStreamDataSource> {
+        self { KlineStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
     }
     
     var candlestickRemoteDataSource: Factory<any CandlestickRemoteDataSource> {

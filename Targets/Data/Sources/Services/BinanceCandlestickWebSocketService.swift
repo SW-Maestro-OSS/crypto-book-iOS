@@ -22,7 +22,7 @@ public final class BinanceCandlestickStreamingWebSocketService: CandlestickRemot
     public func connect(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error> {
         return AsyncThrowingStream { continuation in
             do {
-                let endpoint = BinanceEndpoint.candlestick(symbol: symbol, interval: interval)
+                let endpoint = BinanceEndpoint.klineStream(symbol: symbol, interval: interval)
                 let url = try endpoint.asWebSocketURL()
                 
                 let webSocket = session.webSocketTask(with: url)
@@ -39,9 +39,9 @@ public final class BinanceCandlestickStreamingWebSocketService: CandlestickRemot
                                     do {
                                         let decoder = JSONDecoder()
                                         let dto = try decoder.decode(BinanceKlineDTO.self, from: data)
-                                        if let candle = dto.toDomain() {
-                                            continuation.yield(candle)
-                                        }
+//                                        if let candle = dto.toDomain() {
+//                                            continuation.yield(candle)
+//                                        }
                                     } catch {
                                         // Decoding error - skip this message
                                     }

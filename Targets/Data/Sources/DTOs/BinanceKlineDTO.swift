@@ -9,22 +9,6 @@
 import Foundation
 import Entity
 
-/// Binance Kline (Candle) DTO
-/// Response shape (array):
-/// [
-///   0 openTime,
-///   1 open,
-///   2 high,
-///   3 low,
-///   4 close,
-///   5 volume,
-///   6 closeTime,
-///   7 quoteAssetVolume,
-///   8 numberOfTrades,
-///   9 takerBuyBaseAssetVolume,
-///   10 takerBuyQuoteAssetVolume,
-///   11 ignore
-/// ]
 public struct BinanceKlineDTO: Decodable {
     public let eventType: String
     public let eventTime: Int64
@@ -65,7 +49,7 @@ public struct BinanceKlineDTO: Decodable {
 
 extension BinanceKlineDTO {
     
-    public func toDomain() -> Candle? {
+    public func toDomain() throws -> Candle {
         let data = self.kline
 
         guard
@@ -75,7 +59,7 @@ extension BinanceKlineDTO {
             let close = Double(data.close),
             let volume = Double(data.volume)
         else {
-            return nil
+            throw DataMappingError.invalidNumberFormat
         }
 
         return Candle(

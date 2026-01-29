@@ -6,7 +6,7 @@ struct CandlestickChart: View {
     let candles: [Candle]
 
     var body: some View {
-        Chart(Array(candles.enumerated()), id: \.element.id) { index, candle in
+        Chart(Array(candles.enumerated()), id: \.element.openTimeMs) { index, candle in
             // Wick (심지): high ~ low
             RuleMark(
                 x: .value("Index", dayLabel(candle)),
