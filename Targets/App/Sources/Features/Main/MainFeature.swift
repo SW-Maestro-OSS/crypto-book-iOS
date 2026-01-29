@@ -85,7 +85,7 @@ struct MainFeature {
         case settings(SettingsFeature.Action)
     }
 
-    @Reducer(state: .equatable)
+    @Reducer
     enum Destination {
         case currencyDetail(CurrencyDetailFeature)
     }
@@ -101,6 +101,12 @@ struct MainFeature {
                 return .none
             case let .tickersUpdated(tickers):
                 state.tickers = tickers
+
+                // Detail이 열려 있으면 해당 심볼의 라이브 데이터를 전달
+                if case let .currencyDetail(detailState) = state.destination,
+                   let ticker = tickers.first(where: { $0.symbol == detailState.symbol }) {
+                    return .send(.destination(.presented(.currencyDetail(.liveTickerUpdated(ticker)))))
+                }
                 return .none
 
             case let .setExchangeRate(rate):
@@ -166,3 +172,5 @@ struct MainFeature {
         .ifLet(\.$destination, action: \.destination)
     }
 }
+
+extension MainFeature.Destination.State: Equatable {}

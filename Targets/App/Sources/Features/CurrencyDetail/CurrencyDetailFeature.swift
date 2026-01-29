@@ -9,7 +9,6 @@
 import Foundation
 import ComposableArchitecture
 import Entity
-import Domain
 import Infra
 
 @Reducer
@@ -69,7 +68,7 @@ struct CurrencyDetailFeature {
     enum Action: Equatable {
         case onAppear
         case onDisappear
-        case tickReceived(CurrencyDetailTick)
+        case liveTickerUpdated(MarketTicker)
         case fetchChart
         case chartResponse(Result<[Candle], ChartError>)
         case candleUpdated(Candle)
@@ -91,7 +90,6 @@ struct CurrencyDetailFeature {
     }
 
     enum CancelID {
-        case detailSocket
         case klineSocket
     }
 
@@ -110,7 +108,6 @@ struct CurrencyDetailFeature {
     }
 
     // MARK: - Reducer
-    @Dependency(\.currencyDetailStreaming) var streaming
     @Dependency(\.fetchKlines) var fetchKlines
     @Dependency(\.klineStream) var klineStream
     @Dependency(\.newsClient) var newsClient
@@ -124,37 +121,18 @@ struct CurrencyDetailFeature {
                 guard state.isFirstAppear else { return .none }
                 state.isFirstAppear = false
 
-                // Kick off snapshot fetches.
                 return .merge(
                     .send(.fetchChart),
-                    .send(.fetchNews),
-                    .run { [symbol = state.symbol] send in
-                        defer { streaming.disconnect() }
-                        do {
-                            for try await tick in streaming.connect(symbol) {
-                                await send(.tickReceived(tick))
-                            }
-                        } catch {
-                            // Swallow streaming errors for now; UI can stay on last known values.
-                        }
-                    }
-                    .cancellable(id: CancelID.detailSocket, cancelInFlight: true)
+                    .send(.fetchNews)
                 )
 
             case .onDisappear:
                 return .none
 
-            case let .tickReceived(tick):
-                if let mid = tick.midPrice {
-                    state.midPrice = mid
-                    // Recalculate absolute change based on the new mid-price
-                    if let prevClose = state.previousClosePrice {
-                        state.priceChange24h = mid - prevClose
-                    }
-                }
-                if let change = tick.changePercent24h {
-                    state.changePercent24h = change
-                }
+            case let .liveTickerUpdated(ticker):
+                state.midPrice = ticker.lastPrice
+                state.priceChange24h = ticker.priceChange
+                state.changePercent24h = ticker.priceChangePercent
                 return .none
 
             // MARK: Chart

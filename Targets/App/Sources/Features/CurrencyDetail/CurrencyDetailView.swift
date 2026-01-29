@@ -170,7 +170,7 @@ struct CurrencyDetailView: View {
                 emptyNewsView
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(store.news.prefix(10)) { article in
+                    ForEach(store.news.prefix(10), id: \.originalURL) { article in
                         newsRow(article)
                     }
                 }

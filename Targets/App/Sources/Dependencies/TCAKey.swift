@@ -32,16 +32,6 @@ enum FetchKlinesClientKey: DependencyKey {
     }()
 }
 
-enum CurrencyDetailStreamClientKey: DependencyKey {
-    static let liveValue: CurrencyDetailStreamClient = {
-        let streaming = container.currencyDetailStreaming()
-        return CurrencyDetailStreamClient(
-            connect: { symbol in streaming.connect(symbol: symbol) },
-            disconnect: { streaming.disconnect() }
-        )
-    }()
-}
-
 enum ExchangeRateClientKey: DependencyKey {
     static let liveValue: ExchangeRateClient = {
         let repo = container.exchangeRateRepository()
@@ -67,11 +57,6 @@ extension DependencyValues {
     var fetchKlines: FetchKlinesClient {
         get { self[FetchKlinesClientKey.self] }
         set { self[FetchKlinesClientKey.self] = newValue }
-    }
-
-    var currencyDetailStreaming: CurrencyDetailStreamClient {
-        get { self[CurrencyDetailStreamClientKey.self] }
-        set { self[CurrencyDetailStreamClientKey.self] = newValue }
     }
 
     var exchangeRateClient: ExchangeRateClient {

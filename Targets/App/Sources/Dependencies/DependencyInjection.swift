@@ -66,12 +66,6 @@ extension Container {
         self { BinanceKlineRemoteDataSourceImpl(networkClient: self.networkClient())}
     }
     
-    // MARK: - Services
-
-    var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
-        self { CurrencyDetailStreamingImpl() }
-    }
-    
     // MARK: - Infra Service
     
     var standardWebSocketClient: Factory<any WebSocketClient> {
