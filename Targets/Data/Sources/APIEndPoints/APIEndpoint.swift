@@ -10,12 +10,12 @@ import Foundation
 
 // MARK: - Protocol
 
-enum HTTPMethod: String {
+public enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
 }
 
-protocol APIEndpoint {
+public protocol APIEndpoint {
     var baseURL: String { get }
     var path: String { get }
     var method: HTTPMethod { get }
@@ -29,7 +29,7 @@ extension APIEndpoint {
     var queryItems: [URLQueryItem]? { nil }
     var body: Data? { nil }
 
-    func asURLRequest() throws -> URLRequest {
+    public func asURLRequest() throws -> URLRequest {
         guard var components = URLComponents(string: baseURL) else {
             throw URLError(.badURL, userInfo: ["description": "Invalid base URL: \(baseURL)"])
         }
@@ -49,7 +49,7 @@ extension APIEndpoint {
         return request
     }
 
-    func asWebSocketURL() throws -> URL {
+    public func asWebSocketURL() throws -> URL {
         guard var components = URLComponents(string: baseURL) else {
             throw URLError(.badURL, userInfo: ["description": "Invalid WebSocket base URL: \(baseURL)"])
         }
@@ -65,4 +65,3 @@ extension APIEndpoint {
         return url
     }
 }
-

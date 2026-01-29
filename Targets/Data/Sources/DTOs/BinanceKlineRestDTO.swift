@@ -9,15 +9,15 @@
 import Foundation
 import Entity
 
-struct BinanceKlineRestDTO: Decodable {
-    let openTime: Int64
-    let open: String
-    let high: String
-    let low: String
-    let close: String
-    let volume: String
+public struct BinanceKlineRestDTO: Decodable {
+    public let openTime: Int64
+    public let open: String
+    public let high: String
+    public let low: String
+    public let close: String
+    public let volume: String
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
         self.openTime = try container.decode(Int64.self)
         self.open = try container.decode(String.self)
@@ -27,7 +27,7 @@ struct BinanceKlineRestDTO: Decodable {
         self.volume = try container.decode(String.self)
     }
 
-    func toDomain() -> Candle? {
+    public func toDomain() -> Candle? {
         guard let o = Double(open), let h = Double(high),
               let l = Double(low), let c = Double(close),
               let v = Double(volume) else { return nil }

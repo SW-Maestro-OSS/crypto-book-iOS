@@ -41,9 +41,15 @@ extension Container {
         self { BinanceApiRepositoryImpl() }.singleton
     }
     
+    // MARK: - Infra Service
+    
     var binanceAllMarketTickersWebSocketService: Factory<any WebSocketClient> {
         self { BinanceAllMarketTickersWebSocketService() }
             .singleton
+    }
+    
+    var networkClient: Factory<any NetworkClient> {
+        self { URLSessionNetworkClient() } 
     }
     
     // MARK: - TCA clients (use these from DependencyKey liveValue)
