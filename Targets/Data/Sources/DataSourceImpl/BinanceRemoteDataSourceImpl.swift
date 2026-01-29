@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class BinanceRemoteDataSourceImpl: BinanceRemoteDataSource {
+public final class BinanceCandlestickRemoteDataSourceImpl: CandlestickRemoteDataSource {
     private let networkClient: NetworkClient // 인프라 주입
     private let decoder = JSONDecoder()
 

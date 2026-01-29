@@ -22,7 +22,7 @@ struct BinanceAPIClient {
 
 extension BinanceAPIClient: DependencyKey {
     static let liveValue: Self = {
-        @Injected(\.binanceApiRepository) var repository
+        @Injected(\.candlestickRepository) var repository
         let candlestickService = BinanceCandlestickStreamingWebSocketService()
 
         return Self(

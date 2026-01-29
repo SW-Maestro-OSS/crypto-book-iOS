@@ -31,14 +31,19 @@ extension Container {
         self { MarketTickerRemoteDataSourceImpl(wsClient: self.binanceAllMarketTickersWebSocketService())}
     }
     
+    var candlestickRemoteDataSource: Factory<any CandlestickRemoteDataSource> {
+        self { BinanceCandlestickRemoteDataSourceImpl(networkClient: self.networkClient())}
+    }
+    
     // MARK: - Services
 
     var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
         self { CurrencyDetailStreamingImpl() }
     }
 
-    var binanceApiRepository: Factory<any BinanceApiRepository> {
-        self { BinanceApiRepositoryImpl() }.singleton
+    var candlestickRepository: Factory<any CandlestickRepository> {
+        self { CandlestickRepositoryImpl(remoteDataSource: self.candlestickRemoteDataSource())}
+            .singleton
     }
     
     // MARK: - Infra Service
@@ -86,7 +91,7 @@ extension Container {
             let candlestickService = self.candlestickStreaming()
             return BinanceAPIClient(
                 fetchKlines: { symbol, interval, limit in
-                    try await self.binanceApiRepository().fetchKlines(
+                    try await self.candlestickRepository().fetchKlines(
                         symbol: symbol,
                         interval: interval,
                         limit: limit

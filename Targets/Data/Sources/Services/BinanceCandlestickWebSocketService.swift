@@ -11,7 +11,7 @@ import Combine
 import Entity
 
 /// 특정 암호화폐의 양봉 정보를 실시간으로 받아옴
-public final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSource {
+public final class BinanceCandlestickStreamingWebSocketService: CandlestickRemoteDataSource2 {
     private var webSocket: URLSessionWebSocketTask?
     private let session: URLSession
     

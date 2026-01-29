@@ -5,6 +5,6 @@
 
 import Foundation
 
-protocol BinanceApiRemoteDataSource {
+public protocol CandlestickRemoteDataSource {
     func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [BinanceKlineRestDTO]
 }

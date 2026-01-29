@@ -9,6 +9,6 @@
 import Foundation
 import Entity
 
-public protocol BinanceApiRepository {
+public protocol CandlestickRepository {
     func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [Candle]
 }

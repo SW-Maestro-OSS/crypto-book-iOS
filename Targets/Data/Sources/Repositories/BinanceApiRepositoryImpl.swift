@@ -10,14 +10,10 @@ import Foundation
 import Domain
 import Entity
 
-public final class BinanceApiRepositoryImpl: BinanceApiRepository {
-    private let remoteDataSource: BinanceApiRemoteDataSource
+public final class CandlestickRepositoryImpl: CandlestickRepository {
+    private let remoteDataSource: CandlestickRemoteDataSource
 
-    public init() {
-        self.remoteDataSource = BinanceApiService()
-    }
-
-    init(remoteDataSource: BinanceApiRemoteDataSource) {
+    public init(remoteDataSource: CandlestickRemoteDataSource) {
         self.remoteDataSource = remoteDataSource
     }
 
