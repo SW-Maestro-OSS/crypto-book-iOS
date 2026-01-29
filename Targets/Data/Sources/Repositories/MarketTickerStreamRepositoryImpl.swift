@@ -10,7 +10,7 @@ import Foundation
 import Entity
 import Domain
 
-public final class MarketTickerRepositoryImpl: MarketTickerRepository {
+public final class MarketTickerStreamRepositoryImpl: MarketTickerStreamRepository {
     private let remoteDataSource: MarketTickerRemoteDataSource
     
     public init(remoteDataSource: MarketTickerRemoteDataSource) {

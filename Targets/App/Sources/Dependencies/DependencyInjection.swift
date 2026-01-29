@@ -17,14 +17,14 @@ extension Container {
     // MARK: - UseCases
     var subscribeMarketTickerUseCase: Factory<SubscribeMarketTickerUseCase> {
         self {
-            SubscribeMarketTickerUseCase(repository: self.marketTickerRepository())
+            SubscribeMarketTickerUseCase(repository: self.marketTickerStreamRepository())
         }
     }
     
     // MARK: - Repositories
 
-    var marketTickerRepository: Factory<any MarketTickerRepository> {
-        self { MarketTickerRepositoryImpl(remoteDataSource: self.marketTickerRemoteDataSource()) }
+    var marketTickerStreamRepository: Factory<any MarketTickerStreamRepository> {
+        self { MarketTickerStreamRepositoryImpl(remoteDataSource: self.marketTickerRemoteDataSource()) }
             .singleton
     }
 
@@ -64,16 +64,6 @@ extension Container {
     }
     
     // MARK: - TCA clients (use these from DependencyKey liveValue)
-    
-    var marketTickerClient: Factory<MarketTickerClient> {
-        self {
-            return MarketTickerClient(
-                stream: {
-                    self.marketTickerRepository().tickerStream()
-                }
-            )
-        }
-    }
     
     var currencyDetailStreamingClient: Factory<CurrencyDetailStreamingClient> {
         self {

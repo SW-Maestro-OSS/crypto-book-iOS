@@ -10,9 +10,9 @@ import Foundation
 import Entity
 
 public final class SubscribeMarketTickerUseCase {
-    private let repository: MarketTickerRepository
+    private let repository: MarketTickerStreamRepository
 
-    public init(repository: MarketTickerRepository) {
+    public init(repository: MarketTickerStreamRepository) {
         self.repository = repository
     }
 
