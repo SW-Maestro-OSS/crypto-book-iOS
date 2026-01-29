@@ -11,8 +11,13 @@ import ComposableArchitecture
 // MARK: - DependencyValues
 
 extension DependencyValues {
-    var marketTicker: MarketTickerClient {
-        get { self[MarketTickerClientKey.self] }
-        set { self[MarketTickerClientKey.self] = newValue }
+    var marketTickerStream: MarketTickerStreamClient {
+        get { self[MarketTickerStreamClientKey.self] }
+        set { self[MarketTickerStreamClientKey.self] = newValue }
+    }
+    
+    var klineStream: KlineStreamClient {
+        get { self[KlineStreamClientKey.self] }
+        set { self[KlineStreamClientKey.self] = newValue }
     }
 }

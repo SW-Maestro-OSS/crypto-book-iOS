@@ -174,7 +174,7 @@ struct CurrencyDetailFeature {
                 state.candles = candles
                 // Start kline streaming for real-time updates
                 return .run { [symbol = state.symbol] send in
-                    defer { binanceAPIClient.disconnectKlineStream() }
+//                    defer { binanceAPIClient.disconnectKlineStream() }
                     do {
                         for try await candle in binanceAPIClient.streamKline(symbol, "1d") {
                             await send(.candleUpdated(candle))

@@ -8,9 +8,12 @@
 
 import Foundation
 import ComposableArchitecture
-import Factory
 import Entity
 
-struct MarketTickerClient {
+struct MarketTickerStreamClient {
     var stream: () -> AsyncThrowingStream<[MarketTicker], Error>
+}
+
+struct KlineStreamClient {
+    var stream: (String, String) -> AsyncThrowingStream<Candle, Error>
 }

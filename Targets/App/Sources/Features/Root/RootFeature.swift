@@ -30,7 +30,7 @@ struct RootFeature {
   @Dependency(\.continuousClock) var clock
   @Dependency(\.exchangeRateClient) var exchangeRateClient
   @Dependency(\.imageCache) var imageCache
-  @Dependency(\.marketTicker) var marketTicker
+  @Dependency(\.marketTickerStream) var marketTickerStream
 
   private enum CancelID { case marketTicker }
 
@@ -59,7 +59,7 @@ struct RootFeature {
           },
           .run { send in
             do {
-              for try await tickers in marketTicker.stream() {
+              for try await tickers in marketTickerStream.stream() {
                 await send(.marketTickerResponse(.success(tickers)))
               }
             } catch {

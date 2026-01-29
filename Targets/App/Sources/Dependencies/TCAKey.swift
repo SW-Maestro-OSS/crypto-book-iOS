@@ -10,9 +10,18 @@ import Foundation
 import ComposableArchitecture
 import Factory
 
-enum MarketTickerClientKey: DependencyKey {
-    static let liveValue: MarketTickerClient = {
+enum MarketTickerStreamClientKey: DependencyKey {
+    static let liveValue: MarketTickerStreamClient = {
         let useCase = Container.shared.subscribeMarketTickerUseCase()
-        return MarketTickerClient(stream: { useCase.execute() })
+        return MarketTickerStreamClient(stream: { useCase.execute() })
+    }()
+}
+
+enum KlineStreamClientKey: DependencyKey {
+    static let liveValue: KlineStreamClient = {
+        let useCase = Container.shared.subscribeKlineUseCase()
+        return KlineStreamClient { symbol, interval in
+            useCase.execute(symbol: symbol, interval: interval)
+        }
     }()
 }

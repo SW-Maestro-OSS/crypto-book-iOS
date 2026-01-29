@@ -15,7 +15,6 @@ import Data
 struct BinanceAPIClient {
     var fetchKlines: @Sendable (_ symbol: String, _ interval: String, _ limit: Int) async throws -> [Candle]
     var streamKline: @Sendable (_ symbol: String, _ interval: String) -> AsyncThrowingStream<Candle, Error>
-    var disconnectKlineStream: @Sendable () -> Void
 }
 
 // MARK: - DependencyKey
@@ -31,9 +30,6 @@ extension BinanceAPIClient: DependencyKey {
             },
             streamKline: { symbol, interval in
                 candlestickService.connect(symbol: symbol, interval: interval)
-            },
-            disconnectKlineStream: {
-                candlestickService.disconnect()
             }
         )
     }()

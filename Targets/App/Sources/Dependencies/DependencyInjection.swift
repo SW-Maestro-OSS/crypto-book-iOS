@@ -21,7 +21,7 @@ extension Container {
         }
     }
     
-    var subscribeCandleStickUseCase: Factory<SubscribeKlineStreamUseCase> {
+    var subscribeKlineUseCase: Factory<SubscribeKlineStreamUseCase> {
         self {
             SubscribeKlineStreamUseCase(repository: self.klineStreamRepository())
         }
@@ -96,28 +96,7 @@ extension Container {
     var candlestickStreaming: Factory<BinanceCandlestickStreamingWebSocketService> {
         self { BinanceCandlestickStreamingWebSocketService() }
     }
-
-    var binanceAPIClient: Factory<BinanceAPIClient> {
-        self {
-            let candlestickService = self.candlestickStreaming()
-            return BinanceAPIClient(
-                fetchKlines: { symbol, interval, limit in
-                    try await self.candlestickRepository().fetchKlines(
-                        symbol: symbol,
-                        interval: interval,
-                        limit: limit
-                    )
-                },
-                streamKline: { symbol, interval in
-                    candlestickService.connect(symbol: symbol, interval: interval)
-                },
-                disconnectKlineStream: {
-                    candlestickService.disconnect()
-                }
-            )
-        }
-    }
-
+    
     var exchangeRateClient: Factory<ExchangeRateClient> {
         self {
             ExchangeRateClient(
