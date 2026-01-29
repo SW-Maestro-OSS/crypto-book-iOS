@@ -10,7 +10,7 @@ import Foundation
 import Data
 
 /// 모든 암호화폐의 시장가 정보를 실시간으로 받아오는 웹 소켓 서비스
-public final class BinanceAllMarketTickersWebSocketService: WebSocketClient {
+public final class StandardWebSocketClient: WebSocketClient {
     private let urlSession: URLSession
     private var webSocketTask: URLSessionWebSocketTask?
 

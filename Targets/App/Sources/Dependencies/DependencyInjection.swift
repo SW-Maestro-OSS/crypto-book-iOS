@@ -14,6 +14,13 @@ import Infra
 
 extension Container {
 
+    // MARK: - UseCases
+    var subscribeMarketTickerUseCase: Factory<SubscribeMarketTickerUseCase> {
+        self {
+            SubscribeMarketTickerUseCase(repository: self.marketTickerRepository())
+        }
+    }
+    
     // MARK: - Repositories
 
     var marketTickerRepository: Factory<any MarketTickerRepository> {
@@ -28,7 +35,7 @@ extension Container {
     
     // MARK: - DataSource
     var marketTickerRemoteDataSource: Factory<any MarketTickerRemoteDataSource> {
-        self { MarketTickerRemoteDataSourceImpl(wsClient: self.binanceAllMarketTickersWebSocketService())}
+        self { MarketTickerRemoteDataSourceImpl(wsClient: self.standardWebSocketClient())}
     }
     
     var candlestickRemoteDataSource: Factory<any CandlestickRemoteDataSource> {
@@ -48,9 +55,8 @@ extension Container {
     
     // MARK: - Infra Service
     
-    var binanceAllMarketTickersWebSocketService: Factory<any WebSocketClient> {
-        self { BinanceAllMarketTickersWebSocketService() }
-            .singleton
+    var standardWebSocketClient: Factory<any WebSocketClient> {
+        self { StandardWebSocketClient() }
     }
     
     var networkClient: Factory<any NetworkClient> {
