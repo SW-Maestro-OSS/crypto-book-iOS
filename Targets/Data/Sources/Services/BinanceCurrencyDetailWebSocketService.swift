@@ -7,6 +7,7 @@
 
 import Foundation
 import Domain
+
 /// 특정 암호화폐의 상세정보를 실시간으로 받아옴
 final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSource, @unchecked Sendable {
 
@@ -19,59 +20,60 @@ final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSourc
 
     /// Connects to Binance WS for a single symbol and emits `CurrencyDetailTick`.
     func connect(symbol: String) -> AsyncThrowingStream<CurrencyDetailTick, Error> {
-        let lower = symbol.lowercased()
-
-        // bookTicker (mid price) + 24hr ticker (change percent)
-        let streams = "\(lower)@bookTicker/\(lower)@ticker"
-        let urlString = "wss://stream.binance.com:9443/stream?streams=\(streams)"
-        let url = URL(string: urlString)!
-
         // Cancel any existing connection (screen re-appear)
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
 
-        let task = session.webSocketTask(with: url)
-        self.webSocketTask = task
-        task.resume()
-
         return AsyncThrowingStream { [weak self] continuation in
-            guard let self else {
+            guard let self = self else {
                 continuation.finish()
                 return
             }
+            
+            do {
+                let endpoint = BinanceEndpoint.currencyDetail(symbol: symbol)
+                let url = try endpoint.asWebSocketURL()
+                let task = self.session.webSocketTask(with: url)
+                self.webSocketTask = task
+                task.resume()
 
-            func receiveNext() {
-                task.receive { result in
-                    switch result {
-                    case .failure(let error):
-                        continuation.finish(throwing: error)
-
-                    case .success(let message):
-                        do {
-                            let data: Data
-                            switch message {
-                            case .data(let d): data = d
-                            case .string(let s): data = Data(s.utf8)
-                            @unknown default:
-                                receiveNext()
-                                return
-                            }
-
-                            if let tick = try self.parseTick(from: data) {
-                                continuation.yield(tick)
-                            }
-                            receiveNext()
-                        } catch {
+                func receiveNext() {
+                    task.receive { result in
+                        switch result {
+                        case .failure(let error):
                             continuation.finish(throwing: error)
+
+                        case .success(let message):
+                            do {
+                                let data: Data
+                                switch message {
+                                case .data(let d): data = d
+                                case .string(let s): data = Data(s.utf8)
+                                @unknown default:
+                                    receiveNext()
+                                    return
+                                }
+
+                                if let tick = try self.parseTick(from: data) {
+                                    continuation.yield(tick)
+                                }
+                                receiveNext()
+                            } catch {
+                                // Don't finish the stream on a single parsing error
+                                print("Error parsing tick: \(error)")
+                                receiveNext()
+                            }
                         }
                     }
                 }
-            }
 
-            receiveNext()
+                receiveNext()
 
-            continuation.onTermination = { [weak self] _ in
-                self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
-                self?.webSocketTask = nil
+                continuation.onTermination = { [weak self] _ in
+                    self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
+                    self?.webSocketTask = nil
+                }
+            } catch {
+                continuation.finish(throwing: error)
             }
         }
     }
@@ -81,6 +83,7 @@ final class BinanceCurrencyDetailWebSocketService: CurrencyDetailRemoteDataSourc
         webSocketTask = nil
     }
 }
+
 
 // MARK: - Parsing
 private extension BinanceCurrencyDetailWebSocketService {

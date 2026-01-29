@@ -57,6 +57,7 @@ let project = Project(
             dependencies: [
                 .target(name: "Domain"),
                 .target(name: "Data"),
+                .target(name: "Infra"),
                 .package(product: "ComposableArchitecture"),
                 .package(product: "Factory")
             ]
@@ -105,7 +106,6 @@ let project = Project(
             dependencies: [
                 .target(name: "Domain"),
                 .target(name: "Entity"),
-                .target(name: "Infra"),
                 .package(product: "Factory")
             ]
         ),
