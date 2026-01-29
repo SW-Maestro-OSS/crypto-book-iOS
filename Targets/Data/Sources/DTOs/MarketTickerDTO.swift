@@ -9,27 +9,27 @@
 import Foundation
 import Entity 
 
-struct MarketTickerDTO: Decodable {
-    let e: String     // Event type
-    let E: Int        // Event time
-    let s: String     // Symbol
-    let p: String     // Price change
-    let P: String     // Price change percent
-    let w: String     // Weighted average price
-    let c: String     // Last price
-    let Q: String     // Last quantity
-    let o: String     // Open price
-    let h: String     // High price
-    let l: String     // Low price
-    let v: String     // Base volume
-    let q: String     // Quote volume
-    let O: Int        // Open time
-    let C: Int        // Close time
-    let F: Int        // First trade ID
-    let L: Int        // Last trade ID
-    let n: Int        // Total trades
+public struct MarketTickerDTO: Decodable {
+    public let e: String     // Event type
+    public let E: Int        // Event time
+    public let s: String     // Symbol
+    public let p: String     // Price change
+    public let P: String     // Price change percent
+    public let w: String     // Weighted average price
+    public let c: String     // Last price
+    public let Q: String     // Last quantity
+    public let o: String     // Open price
+    public let h: String     // High price
+    public let l: String     // Low price
+    public let v: String     // Base volume
+    public let q: String     // Quote volume
+    public let O: Int        // Open time
+    public let C: Int        // Close time
+    public let F: Int        // First trade ID
+    public let L: Int        // Last trade ID
+    public let n: Int        // Total trades
     
-    func toDomain() -> MarketTicker {
+    public func toDomain() -> MarketTicker {
         let iconURL: String?
         if s.hasSuffix("USDT") {
             let baseSymbol = s.dropLast(4).lowercased()

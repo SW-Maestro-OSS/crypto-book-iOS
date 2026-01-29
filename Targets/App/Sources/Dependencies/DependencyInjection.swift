@@ -10,13 +10,14 @@ import Factory
 import ComposableArchitecture
 import Domain
 import Data
+import Infra
 
 extension Container {
 
     // MARK: - Repositories
 
     var marketTickerRepository: Factory<any MarketTickerRepository> {
-        self { MarketTickerRepositoryImpl() }
+        self { MarketTickerRepositoryImpl(remoteDataSource: self.marketTickerRemoteDataSource()) }
             .singleton
     }
 
@@ -24,7 +25,12 @@ extension Container {
         self { ExchangeRateRepositoryImpl() }
             .singleton
     }
-
+    
+    // MARK: - DataSource
+    var marketTickerRemoteDataSource: Factory<any MarketTickerRemoteDataSource> {
+        self { MarketTickerRemoteDataSourceImpl(wsClient: self.binanceAllMarketTickersWebSocketService())}
+    }
+    
     // MARK: - Services
 
     var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
@@ -33,6 +39,11 @@ extension Container {
 
     var binanceApiRepository: Factory<any BinanceApiRepository> {
         self { BinanceApiRepositoryImpl() }.singleton
+    }
+    
+    var binanceAllMarketTickersWebSocketService: Factory<any WebSocketClient> {
+        self { BinanceAllMarketTickersWebSocketService() }
+            .singleton
     }
     
     // MARK: - TCA clients (use these from DependencyKey liveValue)

@@ -118,7 +118,9 @@ let project = Project(
             deploymentTargets: .iOS("16.0"),
             infoPlist: .default,
             sources: ["Targets/Infra/Sources/**"],
-            dependencies: []
+            dependencies: [
+                .target(name: "Data")
+            ]
         )
     ]
 )

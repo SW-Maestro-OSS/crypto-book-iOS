@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Infra
 
 enum CryptopanicEndpoint {
     case posts(currency: String)
