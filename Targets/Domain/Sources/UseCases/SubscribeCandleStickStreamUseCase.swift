@@ -9,10 +9,10 @@
 import Foundation
 import Entity
 
-public final class SubscribeKlineStreamUseCase {
-    private let repository: KlineStreamRepository
+public final class SubscribeCandleStickStreamUseCase {
+    private let repository: CandleStickStreamRepository
 
-    public init(repository: KlineStreamRepository) {
+    public init(repository: CandleStickStreamRepository) {
         self.repository = repository
     }
 

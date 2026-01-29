@@ -10,7 +10,7 @@ import Foundation
 import Domain
 import Entity
 
-public final class KlineStreamRepositoryImpl: KlineStreamRepository {
+public final class CandleStickStreamRepositoryImpl: CandleStickStreamRepository {
     private let remoteDataSource: KlineStreamDataSource
 
     public init(remoteDataSource: KlineStreamDataSource) {

@@ -21,9 +21,9 @@ extension Container {
         }
     }
     
-    var subscribeKlineUseCase: Factory<SubscribeKlineStreamUseCase> {
+    var subscribeCandleStickUseCase: Factory<SubscribeCandleStickStreamUseCase> {
         self {
-            SubscribeKlineStreamUseCase(repository: self.klineStreamRepository())
+            SubscribeCandleStickStreamUseCase(repository: self.candleStickStreamRepository())
         }
     }
     
@@ -34,8 +34,8 @@ extension Container {
             .singleton
     }
     
-    var klineStreamRepository: Factory<any KlineStreamRepository> {
-        self { KlineStreamRepositoryImpl(remoteDataSource: self.candlestickStreamDataSource()) }
+    var candleStickStreamRepository: Factory<any CandleStickStreamRepository> {
+        self { CandleStickStreamRepositoryImpl(remoteDataSource: self.klineStreamDataSource()) }
             .singleton
     }
 
@@ -49,11 +49,11 @@ extension Container {
         self { MarketTickerStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
     }
     
-    var candlestickStreamDataSource: Factory<any KlineStreamDataSource> {
+    var klineStreamDataSource: Factory<any KlineStreamDataSource> {
         self { KlineStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
     }
     
-    var candlestickRemoteDataSource: Factory<any CandlestickRemoteDataSource> {
+    var klineRemoteDataSource: Factory<any CandlestickRemoteDataSource> {
         self { BinanceCandlestickRemoteDataSourceImpl(networkClient: self.networkClient())}
     }
     
@@ -64,7 +64,7 @@ extension Container {
     }
 
     var candlestickRepository: Factory<any CandlestickRepository> {
-        self { CandlestickRepositoryImpl(remoteDataSource: self.candlestickRemoteDataSource())}
+        self { CandlestickRepositoryImpl(remoteDataSource: self.klineRemoteDataSource())}
             .singleton
     }
     
@@ -91,10 +91,6 @@ extension Container {
                 }
             )
         }
-    }
-    
-    var candlestickStreaming: Factory<BinanceCandlestickStreamingWebSocketService> {
-        self { BinanceCandlestickStreamingWebSocketService() }
     }
     
     var exchangeRateClient: Factory<ExchangeRateClient> {

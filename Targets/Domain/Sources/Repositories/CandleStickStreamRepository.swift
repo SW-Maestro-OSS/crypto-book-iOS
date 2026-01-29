@@ -8,6 +8,6 @@
 
 import Entity
 
-public protocol KlineStreamRepository {
+public protocol CandleStickStreamRepository {
     func kLineStream(symbol: String, interval: String) -> AsyncThrowingStream<Candle, Error>
 }

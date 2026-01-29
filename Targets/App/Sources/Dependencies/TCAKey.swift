@@ -19,7 +19,7 @@ enum MarketTickerStreamClientKey: DependencyKey {
 
 enum KlineStreamClientKey: DependencyKey {
     static let liveValue: KlineStreamClient = {
-        let useCase = Container.shared.subscribeKlineUseCase()
+        let useCase = Container.shared.subscribeCandleStickUseCase()
         return KlineStreamClient { symbol, interval in
             useCase.execute(symbol: symbol, interval: interval)
         }

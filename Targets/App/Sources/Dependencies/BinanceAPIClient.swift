@@ -22,14 +22,14 @@ struct BinanceAPIClient {
 extension BinanceAPIClient: DependencyKey {
     static let liveValue: Self = {
         @Injected(\.candlestickRepository) var repository
-        let candlestickService = BinanceCandlestickStreamingWebSocketService()
+        @Injected(\.subscribeCandleStickUseCase) var candlestickService
 
         return Self(
             fetchKlines: { symbol, interval, limit in
                 try await repository.fetchKlines(symbol: symbol, interval: interval, limit: limit)
             },
             streamKline: { symbol, interval in
-                candlestickService.connect(symbol: symbol, interval: interval)
+                candlestickService.execute(symbol: symbol, interval: interval)
             }
         )
     }()
