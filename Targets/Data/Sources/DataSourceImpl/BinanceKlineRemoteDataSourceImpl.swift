@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class BinanceCandlestickRemoteDataSourceImpl: CandlestickRemoteDataSource {
+public final class BinanceKlineRemoteDataSourceImpl: BinanceKlineRemoteDataSource {
     private let networkClient: NetworkClient // 인프라 주입
     private let decoder = JSONDecoder()
 
@@ -16,11 +16,11 @@ public final class BinanceCandlestickRemoteDataSourceImpl: CandlestickRemoteData
         self.networkClient = networkClient
     }
 
-    public func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [BinanceKlineRestDTO] {
+    public func fetchKlines(symbol: String, interval: String, limit: Int) async throws -> [BinanceHistoricalKlineDTO] {
         let endpoint = BinanceEndpoint.klines(symbol: symbol, interval: interval, limit: limit)
         // 인프라를 통해 Data를 받아옴
         let data = try await networkClient.request(endpoint: endpoint)
         // 여기서 DTO로 변환
-        return try decoder.decode([BinanceKlineRestDTO].self, from: data)
+        return try decoder.decode([BinanceHistoricalKlineDTO].self, from: data)
     }
 }

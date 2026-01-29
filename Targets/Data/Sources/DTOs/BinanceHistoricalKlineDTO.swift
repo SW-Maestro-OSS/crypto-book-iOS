@@ -9,7 +9,7 @@
 import Foundation
 import Entity
 
-public struct BinanceKlineRestDTO: Decodable {
+public struct BinanceHistoricalKlineDTO: Decodable {
     public let openTime: Int64
     public let open: String
     public let high: String
@@ -27,14 +27,25 @@ public struct BinanceKlineRestDTO: Decodable {
         self.volume = try container.decode(String.self)
     }
 
-    public func toDomain() -> Candle? {
-        guard let o = Double(open), let h = Double(high),
-              let l = Double(low), let c = Double(close),
-              let v = Double(volume) else { return nil }
+    public func toDomain() throws -> Candle {
+
+        guard
+            let open = Double(self.open),
+            let high = Double(self.high),
+            let low = Double(self.low),
+            let close = Double(self.close),
+            let volume = Double(self.volume)
+        else {
+            throw DataMappingError.invalidNumberFormat
+        }
 
         return Candle(
-            openTimeMs: openTime,
-            open: o, high: h, low: l, close: c, volume: v
+            openTimeMs: self.openTime,
+            open: open,
+            high: high,
+            low: low,
+            close: close,
+            volume: volume
         )
     }
 }

@@ -11,9 +11,9 @@ import Domain
 import Entity
 
 public final class CandlestickRepositoryImpl: CandlestickRepository {
-    private let remoteDataSource: CandlestickRemoteDataSource
+    private let remoteDataSource: BinanceKlineRemoteDataSource
 
-    public init(remoteDataSource: CandlestickRemoteDataSource) {
+    public init(remoteDataSource: BinanceKlineRemoteDataSource) {
         self.remoteDataSource = remoteDataSource
     }
 
@@ -23,6 +23,6 @@ public final class CandlestickRepositoryImpl: CandlestickRepository {
             interval: interval,
             limit: limit
         )
-        return dtos.compactMap { $0.toDomain() }
+        return try dtos.map { try $0.toDomain() }
     }
 }

@@ -111,7 +111,8 @@ struct CurrencyDetailFeature {
 
     // MARK: - Reducer
     @Dependency(\.currencyDetailStreaming) var streaming
-    @Dependency(\.binanceAPIClient) var binanceAPIClient
+    @Dependency(\.fetchKlines) var fetchKlines
+    @Dependency(\.klineStream) var klineStream
     @Dependency(\.newsClient) var newsClient
     @Dependency(\.openURL) var openURL
     @Dependency(\.aiInsightClient) var aiInsightClient
@@ -162,7 +163,7 @@ struct CurrencyDetailFeature {
                 state.chartError = nil
                 return .run { [symbol = state.symbol] send in
                     do {
-                        let candles = try await binanceAPIClient.fetchKlines(symbol, "1d", 7)
+                        let candles = try await fetchKlines.execute(symbol, "1d", 7)
                         await send(.chartResponse(.success(candles)))
                     } catch {
                         await send(.chartResponse(.failure(.network(error.localizedDescription))))
@@ -174,9 +175,8 @@ struct CurrencyDetailFeature {
                 state.candles = candles
                 // Start kline streaming for real-time updates
                 return .run { [symbol = state.symbol] send in
-//                    defer { binanceAPIClient.disconnectKlineStream() }
                     do {
-                        for try await candle in binanceAPIClient.streamKline(symbol, "1d") {
+                        for try await candle in klineStream.stream(symbol, "1d") {
                             await send(.candleUpdated(candle))
                         }
                     } catch {

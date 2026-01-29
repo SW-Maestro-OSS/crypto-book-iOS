@@ -28,7 +28,7 @@ extension AppClient: DependencyKey {
             exit(0)
         }
     )
-    
+
     static let testValue = Self(
         currentLanguage: { "en" },
         setLanguage: { _ in },
@@ -44,4 +44,3 @@ extension DependencyValues {
         set { self[AppClient.self] = newValue }
     }
 }
-

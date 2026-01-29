@@ -7,7 +7,6 @@
 //
 
 import Factory
-import ComposableArchitecture
 import Domain
 import Data
 import Infra
@@ -27,6 +26,12 @@ extension Container {
         }
     }
     
+    var fetchHistoricalCandlesticksUseCase: Factory<FetchHistoricalCandlesticksUseCase> {
+        self {
+            FetchHistoricalCandlesticksUseCase(repository: self.candlestickRepository())
+        }
+    }
+        
     // MARK: - Repositories
 
     var marketTickerStreamRepository: Factory<any MarketTickerStreamRepository> {
@@ -37,6 +42,10 @@ extension Container {
     var candleStickStreamRepository: Factory<any CandleStickStreamRepository> {
         self { CandleStickStreamRepositoryImpl(remoteDataSource: self.klineStreamDataSource()) }
             .singleton
+    }
+    
+    var candlestickRepository: Factory<any CandlestickRepository> {
+        self { CandlestickRepositoryImpl(remoteDataSource: self.klineRemoteDataSource())}
     }
 
     var exchangeRateRepository: Factory<any ExchangeRateRepository> {
@@ -53,19 +62,14 @@ extension Container {
         self { KlineStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
     }
     
-    var klineRemoteDataSource: Factory<any CandlestickRemoteDataSource> {
-        self { BinanceCandlestickRemoteDataSourceImpl(networkClient: self.networkClient())}
+    var klineRemoteDataSource: Factory<any BinanceKlineRemoteDataSource> {
+        self { BinanceKlineRemoteDataSourceImpl(networkClient: self.networkClient())}
     }
     
     // MARK: - Services
 
     var currencyDetailStreaming: Factory<any CurrencyDetailStreaming> {
         self { CurrencyDetailStreamingImpl() }
-    }
-
-    var candlestickRepository: Factory<any CandlestickRepository> {
-        self { CandlestickRepositoryImpl(remoteDataSource: self.klineRemoteDataSource())}
-            .singleton
     }
     
     // MARK: - Infra Service
@@ -78,28 +82,4 @@ extension Container {
         self { URLSessionNetworkClient() } 
     }
     
-    // MARK: - TCA clients (use these from DependencyKey liveValue)
-    
-    var currencyDetailStreamingClient: Factory<CurrencyDetailStreamingClient> {
-        self {
-            CurrencyDetailStreamingClient(
-                connect: { symbol in
-                    self.currencyDetailStreaming().connect(symbol: symbol)
-                },
-                disconnect: {
-                    self.currencyDetailStreaming().disconnect()
-                }
-            )
-        }
-    }
-    
-    var exchangeRateClient: Factory<ExchangeRateClient> {
-        self {
-            ExchangeRateClient(
-                fetchUSDtoKRW: {
-                    try await self.exchangeRateRepository().fetchUSDtoKRW()
-                }
-            )
-        }
-    }
 }
