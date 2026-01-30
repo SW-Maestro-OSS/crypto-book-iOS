@@ -27,7 +27,7 @@ struct MainFeature {
 
     @ObservableState
     struct State: Equatable {
-        var tickers: [MarketTicker] = []
+        var tickers: [String: MarketTicker] = [:]
         var sortKey: MainSortKey? = nil
         var sortOrder: MainSortOrder = .ascending
         var visibleCount: Int = 10
@@ -40,7 +40,7 @@ struct MainFeature {
 
         // Derived collections for presentation
         var top30Tickers: [MarketTicker] {
-            tickers
+            tickers.values
                 .sorted { $0.quoteVolume > $1.quoteVolume }
                 .prefix(30)
                 .map { $0 }
@@ -100,11 +100,13 @@ struct MainFeature {
             case .onAppear:
                 return .none
             case let .tickersUpdated(tickers):
-                state.tickers = tickers
+                for ticker in tickers {
+                    state.tickers[ticker.symbol] = ticker
+                }
 
                 // Detail이 열려 있으면 해당 심볼의 라이브 데이터를 전달
                 if case let .currencyDetail(detailState) = state.destination,
-                   let ticker = tickers.first(where: { $0.symbol == detailState.symbol }) {
+                   let ticker = state.tickers[detailState.symbol] {
                     return .send(.destination(.presented(.currencyDetail(.liveTickerUpdated(ticker)))))
                 }
                 return .none
@@ -146,7 +148,7 @@ struct MainFeature {
                 return .none
 
             case let .tickerTapped(symbol):
-                guard let ticker = state.tickers.first(where: { $0.symbol == symbol }) else {
+                guard let ticker = state.tickers[symbol] else {
                     return .none
                 }
                 let previousClosePrice = ticker.lastPrice - ticker.priceChange

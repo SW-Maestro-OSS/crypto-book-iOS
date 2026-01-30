@@ -8,10 +8,7 @@ struct ExchangeRateService: ExchangeRateRemoteDataSource {
     }
 
     func fetchExchangeRates() async throws -> [ExchangeRateDTO] {
-        guard PlistKeys.apiKey != nil else {
-            throw ExchangeRateError.apiKeyMissing
-        }
-        
+
         let endpoint = ExchangeRateEndpoint.fetchRates
         
         guard let request = try? endpoint.asURLRequest() else {

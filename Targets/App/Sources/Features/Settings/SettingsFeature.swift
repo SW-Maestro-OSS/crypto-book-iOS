@@ -59,7 +59,7 @@ struct SettingsFeature {
                 return .merge(
                     effect,
                     .run { _ in
-                        await appClient.setCurrency(currencyToSave.rawValue)
+                        appClient.setCurrency(currencyToSave.rawValue)
                     }
                 )
                 
