@@ -2,7 +2,7 @@ import SwiftUI
 import ComposableArchitecture
 import Domain
 import UIKit
-import Infra
+import Kingfisher
 
 struct MainView: View {
     @Perception.Bindable var store: StoreOf<MainFeature>
@@ -48,7 +48,12 @@ struct MainView: View {
                                 WithPerceptionTracking {
                                     HStack(spacing: 12) {
                                         // Icon image
-                                        CachedAsyncImage(url: URL(string: ticker.iconURL ?? ""))
+                                        KFImage(URL(string: ticker.iconURL ?? ""))
+                                            .resizable()
+                                            .placeholder {
+                                                Image(systemName: "circle.dashed")
+                                                    .resizable()
+                                            }
                                             .frame(width: 24, height: 24)
                                             .clipShape(RoundedRectangle(cornerRadius: 4))
 
@@ -119,32 +124,6 @@ struct MainView: View {
         }
     }
 }
-
-// MARK: - Subviews
-
-private struct CachedAsyncImage: View {
-    let url: URL?
-    @Dependency(\.imageCache) var imageCache
-    @State private var image: UIImage?
-
-    var body: some View {
-        Group {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-            } else {
-                // Placeholder
-                Image(systemName: "circle.dashed")
-                    .resizable()
-            }
-        }
-        .task(id: url) {
-            guard let url = url else { return }
-            self.image = await imageCache.image(url)
-        }
-    }
-}
-
 
 // MARK: - Helper Functions
 

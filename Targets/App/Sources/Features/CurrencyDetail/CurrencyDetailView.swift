@@ -2,7 +2,6 @@ import SwiftUI
 import Charts
 import ComposableArchitecture
 import Entity
-import Infra // For using CachedAsyncImage
 
 /// A view that displays detailed information about a specific cryptocurrency.
 struct CurrencyDetailView: View {

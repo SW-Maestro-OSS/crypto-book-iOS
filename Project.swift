@@ -21,7 +21,8 @@ let project = Project(
     organizationName: organizationName,
     packages: [
         .remote(url: "https://github.com/hmlongco/Factory.git", requirement: .upToNextMajor(from: "2.5.1")),
-        .remote(url: "https://github.com/pointfreeco/swift-composable-architecture.git", requirement: .upToNextMajor(from: "1.23.1"))
+        .remote(url: "https://github.com/pointfreeco/swift-composable-architecture.git", requirement: .upToNextMajor(from: "1.23.1")),
+        .remote(url: "https://github.com/onevcat/Kingfisher.git", requirement: .upToNextMajor(from: "7.0.0"))
     ],
     settings: appSettings,
     targets: [
@@ -57,9 +58,9 @@ let project = Project(
             dependencies: [
                 .target(name: "Domain"),
                 .target(name: "Data"),
-                .target(name: "Infra"),
                 .package(product: "ComposableArchitecture"),
-                .package(product: "Factory")
+                .package(product: "Factory"),
+                .package(product: "Kingfisher")
             ]
         ),
         // App Tests
@@ -105,22 +106,8 @@ let project = Project(
             sources: ["Targets/Data/Sources/**"],
             dependencies: [
                 .target(name: "Domain"),
-                .target(name: "Entity"),
-                .package(product: "Factory")
+                .target(name: "Entity")
             ]
         ),
-        // Infra
-        .target(
-            name: "Infra",
-            destinations: .iOS,
-            product: .framework,
-            bundleId: "\(organizationName).Infra",
-            deploymentTargets: .iOS("16.0"),
-            infoPlist: .default,
-            sources: ["Targets/Infra/Sources/**"],
-            dependencies: [
-                .target(name: "Data")
-            ]
-        )
     ]
 )

@@ -1,6 +1,6 @@
 import SwiftUI
 import ComposableArchitecture
-import Infra
+import Entity
 
 struct SettingsView: View {
     @Perception.Bindable var store: StoreOf<SettingsFeature>

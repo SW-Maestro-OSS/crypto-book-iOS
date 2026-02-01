@@ -9,7 +9,6 @@
 import Foundation
 import ComposableArchitecture
 import Entity
-import Infra
 
 @Reducer
 struct CurrencyDetailFeature {

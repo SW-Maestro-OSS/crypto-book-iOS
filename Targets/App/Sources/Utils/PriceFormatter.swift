@@ -1,13 +1,14 @@
 import Foundation
+import Entity
 
-public enum PriceFormatter {
+enum PriceFormatter {
     /// Formats a price value based on the selected currency and exchange rate.
     /// - Parameters:
     ///   - price: The price in USD
     ///   - currency: The target currency unit
     ///   - exchangeRate: The USD to KRW exchange rate (required when currency is .krw)
     /// - Returns: Formatted price string with currency symbol
-    public static func format(
+    static func format(
         price: Double,
         currency: CurrencyUnit,
         exchangeRate: Double?

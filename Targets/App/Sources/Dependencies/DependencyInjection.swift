@@ -9,7 +9,6 @@
 import Factory
 import Domain
 import Data
-import Infra
 
 extension Container {
 

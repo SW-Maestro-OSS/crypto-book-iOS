@@ -1,6 +1,6 @@
 import ComposableArchitecture
-import Infra
 import SwiftUI
+import Entity
 
 @Reducer
 struct SettingsFeature {
