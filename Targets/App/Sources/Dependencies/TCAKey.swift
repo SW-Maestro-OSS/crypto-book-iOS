@@ -23,6 +23,15 @@ enum KlineStreamClientKey: DependencyKey {
     }()
 }
 
+enum NewsClientKey: DependencyKey {
+    static let liveValue: NewsClient = {
+        let useCase = container.fetchNewsArticleUseCase()
+        return NewsClient { currency in
+            try await useCase.execute(currency: currency)
+        }
+    }()
+}
+
 enum FetchKlinesClientKey: DependencyKey {
     static let liveValue: FetchKlinesClient = {
         let useCase = container.fetchHistoricalCandlesticksUseCase()
@@ -52,6 +61,11 @@ extension DependencyValues {
     var klineStream: KlineStreamClient {
         get { self[KlineStreamClientKey.self] }
         set { self[KlineStreamClientKey.self] = newValue }
+    }
+    
+    var newsClient: NewsClient {
+        get { self[NewsClientKey.self] }
+        set { self[NewsClientKey.self] = newValue }
     }
 
     var fetchKlines: FetchKlinesClient {

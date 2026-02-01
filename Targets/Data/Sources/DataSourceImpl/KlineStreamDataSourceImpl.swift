@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Entity
 
 public final class KlineStreamDataSourceImpl: KlineStreamDataSource {
     

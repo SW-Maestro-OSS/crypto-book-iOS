@@ -24,7 +24,7 @@ extension CryptopanicEndpoint: APIEndpoint {
             return [
                 URLQueryItem(name: "auth_token", value: apiKey),
                 URLQueryItem(name: "currencies", value: currency),
-                URLQueryItem(name: "public", value: "true")
+                URLQueryItem(name: "kind", value: "news")
             ]
         }
     }

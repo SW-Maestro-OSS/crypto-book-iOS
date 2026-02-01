@@ -31,6 +31,12 @@ extension Container {
             FetchHistoricalCandlesticksUseCase(repository: self.candlestickRepository())
         }
     }
+    
+    var fetchNewsArticleUseCase: Factory<FetchNewsArticleUseCase> {
+        self {
+            FetchNewsArticleUseCase(repository: self.newsRepository())
+        }
+    }
         
     // MARK: - Repositories
 
@@ -53,6 +59,10 @@ extension Container {
             .singleton
     }
     
+    var newsRepository: Factory<any NewsRepository> {
+        self { NewsRepositoryImpl(cryptoPanicDataSource: self.cryptoPanicDataSource())}
+    }
+    
     // MARK: - DataSource
     var marketTickerStreamDataSource: Factory<any MarketTickerStreamDataSource> {
         self { MarketTickerStreamDataSourceImpl(wsClient: self.standardWebSocketClient())}
@@ -64,6 +74,10 @@ extension Container {
     
     var klineRemoteDataSource: Factory<any BinanceKlineRemoteDataSource> {
         self { BinanceKlineRemoteDataSourceImpl(networkClient: self.networkClient())}
+    }
+    
+    var cryptoPanicDataSource: Factory<any CryptoPanicDataSource> {
+        self { CryptoPanicDataSourceImpl(networkClient: self.networkClient())}
     }
     
     // MARK: - Infra Service
