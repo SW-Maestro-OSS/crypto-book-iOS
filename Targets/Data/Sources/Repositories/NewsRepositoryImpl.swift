@@ -2,14 +2,15 @@ import Domain
 import Entity
 
 public final class NewsRepositoryImpl: NewsRepository {
-    private let cryptopanicService: CryptopanicService
+    private let cryptopanicService: CryptoPanicDataSourceImpl
 
-    public init(cryptopanicService: CryptopanicService) {
+    public init(cryptopanicService: CryptoPanicDataSourceImpl) {
         self.cryptopanicService = cryptopanicService
     }
 
     public func fetchNews(currency: String) async throws -> [NewsArticle] {
-        let response = try await cryptopanicService.fetchNews(currency: currency)
-        return response.results.compactMap { $0.toEntity() }
+        let responseDTO = try await cryptopanicService.fetch(currency: currency)
+        print(responseDTO.results)
+        return responseDTO.results.compactMap { $0.toEntity() }
     }
 }

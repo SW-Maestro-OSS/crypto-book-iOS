@@ -76,7 +76,6 @@ struct CurrencyDetailFeature {
         case newsResponse(Result<[NewsArticle], NewsError>)
         case computeInsight
         case insightComputed(Insight)
-        case newsItemTapped(NewsArticle)
     }
 
     // MARK: - Errors
@@ -111,7 +110,6 @@ struct CurrencyDetailFeature {
     @Dependency(\.fetchKlines) var fetchKlines
     @Dependency(\.klineStream) var klineStream
     @Dependency(\.newsClient) var newsClient
-    @Dependency(\.openURL) var openURL
     @Dependency(\.aiInsightClient) var aiInsightClient
 
     var body: some ReducerOf<Self> {
@@ -257,13 +255,6 @@ struct CurrencyDetailFeature {
                 state.insightLoading = false
                 state.insight = insight
                 return .none
-
-            
-
-            case let .newsItemTapped(article):
-                return .run { _ in
-                    await openURL(article.originalURL)
-                }
             }
         }
     }

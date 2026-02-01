@@ -170,7 +170,7 @@ struct CurrencyDetailView: View {
                 emptyNewsView
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(store.news.prefix(10), id: \.originalURL) { article in
+                    ForEach(store.news.prefix(10)) { article in
                         newsRow(article)
                     }
                 }
@@ -192,35 +192,22 @@ struct CurrencyDetailView: View {
     }
 
     private func newsRow(_ article: NewsArticle) -> some View {
-        Button {
-            store.send(.newsItemTapped(article))
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(article.title)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(article.title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .foregroundStyle(.primary)
 
-                    Text(article.date, style: .relative)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, 4)
-            }
-            .padding(12)
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
+            Text(article.date, style: .relative)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.systemGray6))
+        .cornerRadius(10)
     }
 }
 
