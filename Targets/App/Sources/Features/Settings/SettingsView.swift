@@ -12,7 +12,7 @@ struct SettingsView: View {
                     Section(header: Text("Price Display")) {
                         Picker("Currency Unit", selection: $store.selectedCurrency) {
                             ForEach(CurrencyUnit.allCases) { currency in
-                                Text(currency.rawValue).tag(currency)
+                                Text(currency.displayName).tag(currency)
                             }
                         }
                         .pickerStyle(.menu)
@@ -21,14 +21,13 @@ struct SettingsView: View {
                     Section(header: Text("Language")) {
                         Picker("App Language", selection: $store.selectedLanguage) {
                             ForEach(SettingsFeature.Language.allCases) { language in
-                                Text(language.rawValue).tag(language)
+                                Text(language.displayName).tag(language)
                             }
                         }
                         .pickerStyle(.menu)
                     }
                 }
                 .navigationTitle("Settings")
-                .alert($store.scope(state: \.alert, action: \.alert))
             }
         }
     }

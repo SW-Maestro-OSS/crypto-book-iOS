@@ -35,9 +35,6 @@ struct MainFeature {
         @Presents var destination: Destination.State?
         var settings: SettingsFeature.State = .init()
 
-        // Shared State
-        var exchangeRate: Double?
-
         // Derived collections for presentation
         var top30Tickers: [MarketTicker] {
             tickers.values
@@ -75,7 +72,6 @@ struct MainFeature {
     enum Action {
         case onAppear
         case tickersUpdated([MarketTicker])
-        case setExchangeRate(Double)
         case sortBySymbolTapped
         case sortByPriceTapped
         case sortByChangeTapped
@@ -109,11 +105,6 @@ struct MainFeature {
                    let ticker = state.tickers[detailState.symbol] {
                     return .send(.destination(.presented(.currencyDetail(.liveTickerUpdated(ticker)))))
                 }
-                return .none
-
-            case let .setExchangeRate(rate):
-                state.exchangeRate = rate
-                print("[MainFeature] Exchange rate set: \(rate) KRW/USD")
                 return .none
 
             case .sortBySymbolTapped:
@@ -157,9 +148,7 @@ struct MainFeature {
                         symbol: symbol,
                         previousClosePrice: previousClosePrice,
                         priceChange24h: ticker.priceChange,
-                        changePercent24h: ticker.priceChangePercent,
-                        exchangeRate: state.exchangeRate,
-                        selectedCurrency: state.settings.selectedCurrency
+                        changePercent24h: ticker.priceChangePercent
                     )
                 )
                 return .none

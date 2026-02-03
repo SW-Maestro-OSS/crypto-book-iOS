@@ -1,5 +1,5 @@
 import Foundation
 
 protocol ExchangeRateRemoteDataSource {
-    func fetchExchangeRates() async throws -> [ExchangeRateDTO]
+    func fetchExchangeRates(date: Date) async throws -> [ExchangeRateDTO]
 }

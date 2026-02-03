@@ -7,9 +7,9 @@ struct ExchangeRateService: ExchangeRateRemoteDataSource {
         case invalidURL
     }
 
-    func fetchExchangeRates() async throws -> [ExchangeRateDTO] {
+    func fetchExchangeRates(date: Date) async throws -> [ExchangeRateDTO] {
 
-        let endpoint = ExchangeRateEndpoint.fetchRates
+        let endpoint = ExchangeRateEndpoint.fetchRates(date: date)
         
         guard let request = try? endpoint.asURLRequest() else {
             throw ExchangeRateError.invalidURL

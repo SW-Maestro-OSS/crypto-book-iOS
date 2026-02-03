@@ -13,19 +13,24 @@ public struct ExchangeRateRepositoryImpl: ExchangeRateRepository {
     }
 
     public func fetchUSDtoKRW() async throws -> Double {
-        let rates = try await remoteDataSource.fetchExchangeRates()
+        var date = Date()
+        let calendar = Calendar.current
 
-        guard let usdRateDTO = rates.first(where: { $0.currencyUnit == "USD" }) else {
-            throw ExchangeRateError.usdRateNotFound
+        for _ in 0..<7 {
+            let rates = try await remoteDataSource.fetchExchangeRates(date: date)
+
+            if let usdRateDTO = rates.first(where: { $0.currencyUnit == "USD" }) {
+                let rateString = usdRateDTO.dealBasisRate.replacingOccurrences(of: ",", with: "")
+                guard let rate = Double(rateString) else {
+                    throw ExchangeRateError.parsingFailed
+                }
+                return rate
+            }
+
+            date = calendar.date(byAdding: .day, value: -1, to: date) ?? date
         }
 
-        // Remove commas and convert to Double
-        let rateString = usdRateDTO.dealBasisRate.replacingOccurrences(of: ",", with: "")
-        guard let rate = Double(rateString) else {
-            throw ExchangeRateError.parsingFailed
-        }
-
-        return rate
+        throw ExchangeRateError.usdRateNotFound
     }
 
     public enum ExchangeRateError: Error {

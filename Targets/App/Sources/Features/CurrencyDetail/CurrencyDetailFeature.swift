@@ -19,9 +19,9 @@ struct CurrencyDetailFeature {
         let symbol: String
         let previousClosePrice: Double?
 
-        // Shared State from Parent
-        var exchangeRate: Double?
-        var selectedCurrency: CurrencyUnit
+        // Shared State
+        @Shared(.appStorage("exchangeRate")) var exchangeRate: Double = 0
+        @Shared(.appStorage("selectedCurrency")) var selectedCurrency: CurrencyUnit = .usd
 
         // Header (live-ish)
         var midPrice: Double?
@@ -49,16 +49,12 @@ struct CurrencyDetailFeature {
             symbol: String,
             previousClosePrice: Double?,
             priceChange24h: Double?,
-            changePercent24h: Double?,
-            exchangeRate: Double?,
-            selectedCurrency: CurrencyUnit
+            changePercent24h: Double?
         ) {
             self.symbol = symbol
             self.previousClosePrice = previousClosePrice
             self.priceChange24h = priceChange24h
             self.changePercent24h = changePercent24h
-            self.exchangeRate = exchangeRate
-            self.selectedCurrency = selectedCurrency
         }
     }
 

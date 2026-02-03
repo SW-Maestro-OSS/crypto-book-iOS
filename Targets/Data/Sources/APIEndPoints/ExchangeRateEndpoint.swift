@@ -9,7 +9,7 @@
 import Foundation
 
 enum ExchangeRateEndpoint {
-    case fetchRates
+    case fetchRates(date: Date)
 }
 
 extension ExchangeRateEndpoint: APIEndpoint {
@@ -18,13 +18,16 @@ extension ExchangeRateEndpoint: APIEndpoint {
     var method: HTTPMethod { .get }
 
     var queryItems: [URLQueryItem]? {
-        let apiKey = PlistKeys.apiKey
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        return [
-            URLQueryItem(name: "authkey", value: apiKey),
-            URLQueryItem(name: "searchdate", value: formatter.string(from: Date())),
-            URLQueryItem(name: "data", value: "AP01")
-        ]
+        switch self {
+        case let .fetchRates(date):
+            let apiKey = PlistKeys.apiKey
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyyMMdd"
+            return [
+                URLQueryItem(name: "authkey", value: apiKey),
+                URLQueryItem(name: "searchdate", value: formatter.string(from: date)),
+                URLQueryItem(name: "data", value: "AP01")
+            ]
+        }
     }
 }

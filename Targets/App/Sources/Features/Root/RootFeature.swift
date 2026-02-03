@@ -9,7 +9,6 @@ struct RootFeature {
     struct State: Equatable {
         var route: Route = .splash
         var main = MainFeature.State()
-        var exchangeRate: Double?
     }
     
     enum Route {
@@ -19,14 +18,12 @@ struct RootFeature {
     
     enum Action {
         case onAppear
-        case setInitialSettings(language: SettingsFeature.Language, currency: CurrencyUnit)
         case splashTimerFinished
         case marketTickerResponse(Result<[MarketTicker], Error>)
         case exchangeRateResponse(Result<Double, Error>)
         case main(MainFeature.Action)
     }
-    
-    @Dependency(\.appClient) var appClient
+
     @Dependency(\.continuousClock) var clock
     @Dependency(\.exchangeRateClient) var exchangeRateClient
     @Dependency(\.marketTickerStream) var marketTickerStream
@@ -43,16 +40,6 @@ struct RootFeature {
             case .onAppear:
                 return .merge(
                     .run { send in
-                        @Dependency(\.appClient) var appClient
-                        let langCode = appClient.currentLanguage()
-                        let lang: SettingsFeature.Language = (langCode == "ko") ? .korean : .english
-                        
-                        let currRawValue = appClient.currentCurrency()
-                        let curr: CurrencyUnit = (currRawValue == CurrencyUnit.krw.rawValue) ? .krw : .usd
-                        
-                        await send(.setInitialSettings(language: lang, currency: curr))
-                    },
-                    .run { send in
                         try await clock.sleep(for: .seconds(2))
                         await send(.splashTimerFinished)
                     },
@@ -67,7 +54,6 @@ struct RootFeature {
                     }
                         .cancellable(id: CancelID.marketTicker),
                     .run { send in
-                        print("[RootFeature] Fetching exchange rate...")
                         await send(
                             .exchangeRateResponse(
                                 Result {
@@ -75,12 +61,7 @@ struct RootFeature {
                                 }))
                     }
                 )
-                
-            case let .setInitialSettings(language, currency):
-                state.main.settings.selectedLanguage = language
-                state.main.settings.selectedCurrency = currency
-                return .none
-                
+
             case .splashTimerFinished:
                 state.route = .main
                 return .none
@@ -99,9 +80,8 @@ struct RootFeature {
                 return .none
                 
             case let .exchangeRateResponse(.success(rate)):
-                state.exchangeRate = rate
-                print("[RootFeature] Exchange rate fetched: \(rate) KRW/USD")
-                return .send(.main(.setExchangeRate(rate)))
+                state.main.settings.$exchangeRate.withLock { $0 = rate }
+                return .none
                 
             case let .exchangeRateResponse(.failure(error)):
                 print("⚠️ exchangeRate fetch error:", error)

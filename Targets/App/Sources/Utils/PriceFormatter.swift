@@ -11,16 +11,16 @@ enum PriceFormatter {
     static func format(
         price: Double,
         currency: CurrencyUnit,
-        exchangeRate: Double?
+        exchangeRate: Double
     ) -> String {
         switch currency {
         case .usd:
             return String(format: "$%.4f", price)
         case .krw:
-            guard let rate = exchangeRate else {
+            guard exchangeRate > 0 else {
                 return "₩---"
             }
-            let krwPrice = price * rate
+            let krwPrice = price * exchangeRate
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
             formatter.maximumFractionDigits = 0

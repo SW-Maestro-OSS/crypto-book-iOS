@@ -72,7 +72,7 @@ struct MainView: View {
                                                 PriceFormatter.format(
                                                     price: ticker.lastPrice,
                                                     currency: store.settings.selectedCurrency,
-                                                    exchangeRate: store.exchangeRate
+                                                    exchangeRate: store.settings.exchangeRate
                                                 )
                                             )
                                             .font(.subheadline)
